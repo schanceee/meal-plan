@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan de repas — Fin mars, Lausanne</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="hero">
+  <h1>Plan de repas de la semaine</h1>
+  <p class="sub">Fin mars · Lausanne · 2 adultes</p>
+  <div class="tags">
+    <span class="tag">Produits de saison</span>
+    <span class="tag">Majoritairement végétarien</span>
+    <span class="tag">2h de prep le dimanche</span>
+    <span class="tag">Fermentés · flore intestinale</span>
+    <span class="tag">Entrée à chaque repas</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- BRING IMPORT -->
+  <div class="bring-box" style="margin-bottom:40px;">
+    <div class="bring-info">
+      <h3>Importer dans Bring!</h3>
+      <p>
+        Chaque page de recette ci-dessous contient le balisage <strong>schema.org/Recipe</strong> reconnu par Bring!.
+        Pour importer, lancez d'abord un serveur local dans ce dossier :<br><br>
+        <code>cd ~/claudecode/meal-plan && python3 -m http.server 8000</code><br><br>
+        Puis dans Bring! → <em>Ajouter une recette</em> → coller l'URL <code>http://localhost:8000/recettes/nom-recette.html</code>.
+        Ou utilisez le bouton <strong>Copier la liste complète</strong> pour l'ajouter manuellement.
+      </p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+      <button class="btn btn-teal" onclick="copyAllIngredients()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copier la liste complète
+      </button>
+      <span class="copy-success" id="copyMsg">✓ Copié !</span>
+    </div>
+  </div>
+
+  <!-- SHOPPING LIST -->
+  <div style="margin-bottom:48px;">
+    <div class="sh">Liste de courses — semaine complète pour 2</div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header open" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🥬</span>
+        <span class="shop-cat-name">Légumes &amp; fruits frais</span>
+        <span class="shop-cat-count">20 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items open">
+        <ul>
+          <li><span class="qty">8</span><span class="item">Oignons jaunes</span></li>
+          <li><span class="qty">6</span><span class="item">Poireaux (moyens)</span></li>
+          <li><span class="qty">4</span><span class="item">Betteraves</span></li>
+          <li><span class="qty">6–8</span><span class="item">Carottes</span></li>
+          <li><span class="qty">1</span><span class="item">Céleri-rave</span></li>
+          <li><span class="qty">1</span><span class="item">Chou-fleur entier</span></li>
+          <li><span class="qty">1</span><span class="item">Chou de Savoie</span></li>
+          <li><span class="qty">400g</span><span class="item">Épinards frais</span></li>
+          <li><span class="qty">200g</span><span class="item">Mâche</span></li>
+          <li><span class="qty">1 botte</span><span class="item">Radis roses</span></li>
+          <li><span class="qty">8</span><span class="item">Pommes de terre</span></li>
+          <li><span class="qty">3 échalotes</span><span class="item">Échalotes</span></li>
+          <li><span class="qty">1 tête</span><span class="item">Ail</span></li>
+          <li><span class="qty">1 botte</span><span class="item">Ail des ours (si disponible)</span></li>
+          <li><span class="qty">1 morceau</span><span class="item">Gingembre frais (5 cm)</span></li>
+          <li><span class="qty">2</span><span class="item">Poivrons rouges</span></li>
+          <li><span class="qty">2</span><span class="item">Citrons</span></li>
+          <li><span class="qty">1</span><span class="item">Orange</span></li>
+          <li><span class="qty">1 botte</span><span class="item">Coriandre fraîche</span></li>
+          <li><span class="qty">qqs tiges</span><span class="item">Sauge fraîche</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🌾</span>
+        <span class="shop-cat-name">Céréales, légumineuses &amp; féculents</span>
+        <span class="shop-cat-count">6 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items">
+        <ul>
+          <li><span class="qty">400g</span><span class="item">Lentilles vertes du Puy</span></li>
+          <li><span class="qty">300g</span><span class="item">Farro ou épeautre</span></li>
+          <li><span class="qty">500g</span><span class="item">Pâtes (rigatoni ou tagliatelle)</span></li>
+          <li><span class="qty">300g</span><span class="item">Riz basmati</span></li>
+          <li><span class="qty">1 rouleau</span><span class="item">Pâte feuilletée</span></li>
+          <li><span class="qty">30g</span><span class="item">Wakamé séché</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🥩</span>
+        <span class="shop-cat-name">Poisson &amp; viande</span>
+        <span class="shop-cat-count">2 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items">
+        <ul>
+          <li><span class="qty">4</span><span class="item">Cuisses de poulet</span></li>
+          <li><span class="qty">4 filets</span><span class="item">Perche du Léman (ou truite)</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🧀</span>
+        <span class="shop-cat-name">Produits laitiers &amp; œufs</span>
+        <span class="shop-cat-count">8 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items">
+        <ul>
+          <li><span class="qty">250g</span><span class="item">Gruyère AOP, râpé</span></li>
+          <li><span class="qty">150g</span><span class="item">Feta</span></li>
+          <li><span class="qty">150g</span><span class="item">Chèvre frais</span></li>
+          <li><span class="qty">200ml</span><span class="item">Crème fraîche épaisse</span></li>
+          <li><span class="qty">500ml</span><span class="item">Kéfir ou yaourt fermenté entier</span></li>
+          <li><span class="qty">200ml</span><span class="item">Lait de coco</span></li>
+          <li><span class="qty">8</span><span class="item">Œufs</span></li>
+          <li><span class="qty">200g</span><span class="item">Beurre</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🫙</span>
+        <span class="shop-cat-name">Fermentés &amp; condiments</span>
+        <span class="shop-cat-count">8 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items">
+        <ul>
+          <li><span class="qty">200g</span><span class="item">Miso blanc (shiro miso)</span></li>
+          <li><span class="qty">1 bouteille</span><span class="item">Tamari (sauce soja fermentée sans gluten)</span></li>
+          <li><span class="qty">1 bouteille</span><span class="item">Vinaigre de cidre non filtré (avec la mère)</span></li>
+          <li><span class="qty">200g</span><span class="item">Tahini</span></li>
+          <li><span class="qty">1 pot</span><span class="item">Harissa</span></li>
+          <li><span class="qty">1 pot</span><span class="item">Moutarde à l'ancienne</span></li>
+          <li><span class="qty">2 miches</span><span class="item">Pain au levain (acheter 2× en semaine)</span></li>
+          <li><span class="qty">1 paquet</span><span class="item">Tofu soyeux (300g)</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🥫</span>
+        <span class="shop-cat-name">Épicerie sèche &amp; conserves</span>
+        <span class="shop-cat-count">8 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items">
+        <ul>
+          <li><span class="qty">2 boîtes</span><span class="item">Tomates concassées (400g chacune)</span></li>
+          <li><span class="qty">100g</span><span class="item">Noix</span></li>
+          <li><span class="qty">100g</span><span class="item">Graines de tournesol</span></li>
+          <li><span class="qty">50g</span><span class="item">Noisettes</span></li>
+          <li><span class="qty">1L</span><span class="item">Bouillon légumes (ou cubes)</span></li>
+          <li><span class="qty">1 bouteille</span><span class="item">Huile d'olive extra-vierge</span></li>
+          <li><span class="qty">1 bouteille</span><span class="item">Huile de noisette</span></li>
+          <li><span class="qty">qqs gouttes</span><span class="item">Huile de sésame (optionnel)</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="shop-category">
+      <div class="shop-cat-header" onclick="toggleCat(this)">
+        <span class="shop-cat-icon">🌿</span>
+        <span class="shop-cat-name">Épices &amp; aromates</span>
+        <span class="shop-cat-count">8 articles</span>
+        <span class="shop-cat-chevron">▼</span>
+      </div>
+      <div class="shop-items">
+        <ul>
+          <li><span class="qty"></span><span class="item">Cumin en graines + moulu</span></li>
+          <li><span class="qty"></span><span class="item">Coriandre moulue</span></li>
+          <li><span class="qty"></span><span class="item">Curcuma moulu</span></li>
+          <li><span class="qty"></span><span class="item">Paprika fumé</span></li>
+          <li><span class="qty"></span><span class="item">Piment séché (flocons ou entier)</span></li>
+          <li><span class="qty"></span><span class="item">Thym séché</span></li>
+          <li><span class="qty">2</span><span class="item">Feuilles de laurier</span></li>
+          <li><span class="qty"></span><span class="item">Noix de muscade</span></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RECIPE GRID -->
+  <div style="margin-bottom:48px;">
+    <div class="sh">Recettes de la semaine</div>
+    <div style="margin-bottom:16px; font-size:14px; color:var(--muted);">
+      Cliquez sur une recette pour voir les détails, ingrédients et instructions — et importer dans Bring!
+    </div>
+
+    <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Dîners en semaine</div>
+    <div class="recipe-grid" style="margin-bottom:28px;">
+
+      <a href="recettes/pasta-miso.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Lundi · Dîner</div>
+          <div class="rc-name">Pasta oignons caramélisés · miso · Gruyère · sauge</div>
+          <div class="rc-desc">Umami profond, une poêle, 15 min actives.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Miso</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/bol-cereales.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Mardi · Dîner</div>
+          <div class="rc-name">Bol céréales · légumes rôtis · lentilles · tahini-tamari</div>
+          <div class="rc-desc">Assemblage pur depuis le prep du dimanche.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Tamari</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/poulet-chou-savoie.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--red)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Mercredi · Dîner</div>
+          <div class="rc-name">Poulet braisé vin blanc · chou de Savoie · moutarde</div>
+          <div class="rc-desc">Riche et hivernal, dernier coup de froid du mois.</div>
+          <div class="rc-footer">
+            <span class="pill pill-m">Viande</span>
+            <span class="pill pill-f">Vinaigre cidre</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/dal-lentilles.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Jeudi · Dîner</div>
+          <div class="rc-name">Dal de lentilles · tadka au cumin · kéfir · riz</div>
+          <div class="rc-desc">La tadka est non-négociable. Le plat de la semaine.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Kéfir</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/perche-lac.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--blue)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Vendredi · Dîner</div>
+          <div class="rc-name">Perche du lac · beurre ail des ours · épinards · pommes de terre</div>
+          <div class="rc-desc">25 min, niveau restaurant. Fin de semaine méritée.</div>
+          <div class="rc-footer">
+            <span class="pill pill-p">Pescatarien</span>
+            <span class="pill pill-f">Vinaigre cidre</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Weekend</div>
+    <div class="recipe-grid" style="margin-bottom:28px;">
+
+      <a href="recettes/salade-betteraves.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Samedi · Déjeuner</div>
+          <div class="rc-name">Salade tiède betteraves · lentilles · farro · chèvre · noix</div>
+          <div class="rc-desc">Tout du prep, zéro cuisson, 5 min d'assemblage.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Tamari · Cidre</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/shakshuka.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Samedi · Dîner</div>
+          <div class="rc-name">Shakshuka épicée · poivrons rôtis · feta · ail des ours</div>
+          <div class="rc-desc">Une poêle, 30 min, saveurs intenses.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Pain au levain</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/tarte-poireaux.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Dimanche · Déjeuner</div>
+          <div class="rc-name">Tarte fine poireaux · Gruyère · crème fraîche</div>
+          <div class="rc-desc">Classique, élégant, 40 min.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Vinaigre cidre</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/veloute-choufleur.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--green)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Dimanche · Dîner</div>
+          <div class="rc-name">Velouté chou-fleur rôti · miso · noisettes · tartine chèvre</div>
+          <div class="rc-desc">Léger et profond à la fois. Fin de semaine idéale.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Miso</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Entrées tournantes</div>
+    <div class="recipe-grid">
+
+      <a href="recettes/soupe-miso.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--teal)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Entrée A — Lun · Mer · Ven · Sam soir · Dim soir</div>
+          <div class="rc-name">Soupe miso · poireau · wakamé · tofu soyeux</div>
+          <div class="rc-desc">Ne jamais faire bouillir le miso. 10 min.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Miso vivant</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/salade-mache.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--teal)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Entrée B — Mar · Jeu · Sam midi · Dim midi</div>
+          <div class="rc-name">Salade de mâche · radis · vinaigrette cidre-moutarde</div>
+          <div class="rc-desc">Mâche de saison. Vinaigrette fermentée.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-f">Vinaigre cidre</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="recettes/potage-carotte.html" class="recipe-card">
+        <div class="rc-header" style="background:var(--teal)"></div>
+        <div class="rc-body">
+          <div class="rc-day">Entrée C — Sam midi · Dim midi</div>
+          <div class="rc-name">Potage carotte · gingembre · lait de coco · coriandre</div>
+          <div class="rc-desc">Fait lors du prep dimanche avec les carottes rôties.</div>
+          <div class="rc-footer">
+            <span class="pill pill-v">Végétarien</span>
+            <span class="pill pill-prep">Prep dimanche</span>
+            <span class="rc-link">Recette →</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleCat(header) {
+  header.classList.toggle('open');
+  header.nextElementSibling.classList.toggle('open');
+}
+
+const ALL_INGREDIENTS = `LÉGUMES & FRUITS
+- 8 oignons jaunes
+- 6 poireaux (moyens)
+- 4 betteraves
+- 6-8 carottes
+- 1 céleri-rave
+- 1 chou-fleur entier
+- 1 chou de Savoie
+- 400g épinards frais
+- 200g mâche
+- 1 botte radis roses
+- 8 pommes de terre
+- 3 échalotes
+- 1 tête d'ail
+- 1 botte ail des ours (si disponible)
+- 1 morceau gingembre frais
+- 2 poivrons rouges
+- 2 citrons
+- 1 orange
+- 1 botte coriandre fraîche
+- quelques tiges de sauge fraîche
+
+CÉRÉALES & LÉGUMINEUSES
+- 400g lentilles vertes du Puy
+- 300g farro ou épeautre
+- 500g pâtes (rigatoni ou tagliatelle)
+- 300g riz basmati
+- 1 rouleau de pâte feuilletée
+- 30g wakamé séché
+
+POISSON & VIANDE
+- 4 cuisses de poulet
+- 4 filets de perche du Léman (ou truite)
+
+PRODUITS LAITIERS & ŒUFS
+- 250g Gruyère AOP râpé
+- 150g feta
+- 150g chèvre frais
+- 200ml crème fraîche épaisse
+- 500ml kéfir ou yaourt fermenté entier
+- 200ml lait de coco
+- 8 œufs
+- 200g beurre
+
+FERMENTÉS & CONDIMENTS
+- 200g miso blanc (shiro miso)
+- tamari
+- vinaigre de cidre non filtré
+- 200g tahini
+- harissa
+- moutarde à l'ancienne
+- pain au levain (2×)
+- 300g tofu soyeux
+
+ÉPICERIE SÈCHE
+- 2 boîtes tomates concassées (400g)
+- 100g noix
+- 100g graines de tournesol
+- 50g noisettes
+- 1L bouillon légumes
+- huile d'olive extra-vierge
+- huile de noisette
+
+ÉPICES
+- cumin en graines + moulu
+- coriandre moulue
+- curcuma moulu
+- paprika fumé
+- piment séché
+- thym séché
+- feuilles de laurier
+- noix de muscade`;
+
+function copyAllIngredients() {
+  navigator.clipboard.writeText(ALL_INGREDIENTS).then(() => {
+    const msg = document.getElementById('copyMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 2500);
+  });
+}
+
+// Open all categories on load
+document.querySelectorAll('.shop-items').forEach((el, i) => {
+  if (i === 0) el.classList.add('open');
+});
+</script>
+</body>
+</html>
