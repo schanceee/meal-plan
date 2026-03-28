@@ -5,6 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Plan de repas — Fin mars, Lausanne</title>
   <link rel="stylesheet" href="style.css">
+  <script async src="//platform.getbring.com/widgets/import.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org/",
+    "@type": "Recipe",
+    "name": "Liste de courses — Plan de repas semaine fin mars",
+    "description": "Liste complète des courses pour la semaine : 12 recettes pour 2 adultes, Lausanne, fin mars. Majoritairement végétarien, ingrédients fermentés, meal prep du dimanche.",
+    "recipeYield": "2 adultes, 1 semaine",
+    "recipeIngredient": [
+      "8 oignons jaunes",
+      "6 poireaux moyens",
+      "4 betteraves",
+      "6 carottes",
+      "1 céleri-rave",
+      "1 chou-fleur entier",
+      "1 chou de Savoie",
+      "400g épinards frais",
+      "200g mâche",
+      "1 botte radis roses",
+      "8 pommes de terre",
+      "3 échalotes",
+      "1 tête d'ail",
+      "1 botte ail des ours",
+      "1 morceau gingembre frais",
+      "2 poivrons rouges",
+      "2 citrons",
+      "1 orange",
+      "1 botte coriandre fraîche",
+      "quelques tiges sauge fraîche",
+      "400g lentilles vertes du Puy",
+      "300g farro ou épeautre",
+      "500g pâtes rigatoni ou tagliatelle",
+      "300g riz basmati",
+      "1 rouleau pâte feuilletée",
+      "30g wakamé séché",
+      "4 cuisses de poulet",
+      "4 filets de perche du Léman",
+      "250g Gruyère AOP râpé",
+      "150g feta",
+      "150g chèvre frais",
+      "200ml crème fraîche épaisse",
+      "500ml kéfir ou yaourt fermenté",
+      "200ml lait de coco",
+      "8 œufs",
+      "200g beurre",
+      "200g miso blanc shiro miso",
+      "tamari",
+      "vinaigre de cidre non filtré",
+      "200g tahini",
+      "harissa",
+      "moutarde à l'ancienne",
+      "pain au levain",
+      "300g tofu soyeux",
+      "2 boîtes tomates concassées 400g",
+      "100g noix",
+      "100g graines de tournesol",
+      "50g noisettes",
+      "1L bouillon de légumes",
+      "huile d'olive extra-vierge",
+      "huile de noisette",
+      "cumin en graines et moulu",
+      "coriandre moulue",
+      "curcuma moulu",
+      "paprika fumé",
+      "piment séché",
+      "thym séché",
+      "feuilles de laurier",
+      "noix de muscade"
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -25,20 +96,12 @@
   <!-- BRING IMPORT -->
   <div class="bring-box" style="margin-bottom:40px;">
     <div class="bring-info">
-      <h3>Importer dans Bring!</h3>
-      <p>
-        Chaque page de recette ci-dessous contient le balisage <strong>schema.org/Recipe</strong> reconnu par Bring!.
-        Pour importer, lancez d'abord un serveur local dans ce dossier :<br><br>
-        <code>cd ~/claudecode/meal-plan && python3 -m http.server 8000</code><br><br>
-        Puis dans Bring! → <em>Ajouter une recette</em> → coller l'URL <code>http://localhost:8000/recettes/nom-recette.html</code>.
-        Ou utilisez le bouton <strong>Copier la liste complète</strong> pour l'ajouter manuellement.
-      </p>
+      <h3>Importer toute la liste dans Bring!</h3>
+      <p>Appuyez sur le bouton Bring! pour importer tous les ingrédients de la semaine en une fois — ou copiez la liste pour l'ajouter manuellement.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-      <button class="btn btn-teal" onclick="copyAllIngredients()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-        Copier la liste complète
-      </button>
+      <div data-bring-import="" data-bring-language="fr"></div>
+      <button class="btn btn-outline" onclick="copyAllIngredients()">Copier la liste complète</button>
       <span class="copy-success" id="copyMsg">✓ Copié !</span>
     </div>
   </div>
