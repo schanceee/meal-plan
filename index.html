@@ -100,6 +100,9 @@
 
 <div class="container">
 
+  <!-- SAVED RECIPES -->
+  <div id="savedSection" class="saved-section" style="display:none"></div>
+
   <!-- BRING IMPORT -->
   <div class="bring-box" style="margin-bottom:40px;">
     <div class="bring-info">
@@ -549,7 +552,142 @@
 
 </div>
 
+<!-- NOTE MODAL -->
+<div id="noteModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-label">Notes for next time</div>
+    <div class="modal-recipe-name" id="noteModalTitle"></div>
+    <textarea id="noteText" placeholder="What would you do differently? Any tweaks, substitutions, timing notes…"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-teal" onclick="saveNote()">Save note</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// ── Storage ──────────────────────────────────────────
+function getRD() { return JSON.parse(localStorage.getItem('recipeData') || '{}'); }
+function saveRD(d) { localStorage.setItem('recipeData', JSON.stringify(d)); }
+function getRec(id) { return getRD()[id] || {}; }
+function setRec(id, updates) {
+  const d = getRD(); d[id] = Object.assign(d[id] || {}, updates); saveRD(d);
+}
+
+// ── Stars ─────────────────────────────────────────────
+function buildStars(id, rating) {
+  let h = '<div class="rc-stars">';
+  for (let i = 1; i <= 5; i++) {
+    h += '<span class="rc-star' + (i <= rating ? ' on' : '') + '"' +
+      ' onclick="setRating(event,\'' + id + '\',' + i + ')"' +
+      ' onmouseover="hoverS(this,' + i + ',' + rating + ')"' +
+      ' onmouseout="resetS(this,' + rating + ')">' +
+      (i <= rating ? '★' : '☆') + '</span>';
+  }
+  return h + '</div>';
+}
+function hoverS(el, val) {
+  el.parentElement.querySelectorAll('.rc-star').forEach(function(s, i) {
+    s.textContent = i < val ? '★' : '☆'; s.classList.toggle('on', i < val);
+  });
+}
+function resetS(el, rating) {
+  el.parentElement.querySelectorAll('.rc-star').forEach(function(s, i) {
+    s.textContent = i < rating ? '★' : '☆'; s.classList.toggle('on', i < rating);
+  });
+}
+function setRating(e, id, val) {
+  e.preventDefault(); e.stopPropagation();
+  const cur = getRec(id).rating || 0;
+  setRec(id, { rating: cur === val ? 0 : val });
+  refreshActions(id); renderSaved();
+}
+
+// ── Note modal ────────────────────────────────────────
+let _noteId = null;
+function openNote(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  _noteId = id;
+  const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
+  document.getElementById('noteModalTitle').textContent = card.querySelector('.rc-name').textContent;
+  document.getElementById('noteText').value = getRec(id).note || '';
+  document.getElementById('noteModal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('noteText').focus(); }, 80);
+}
+function saveNote() {
+  const t = document.getElementById('noteText').value.trim();
+  setRec(_noteId, { note: t }); closeModal(); refreshActions(_noteId); renderSaved();
+}
+function closeModal() {
+  document.getElementById('noteModal').style.display = 'none'; _noteId = null;
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+
+// ── Save / bookmark ───────────────────────────────────
+function toggleSave(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  setRec(id, { saved: !getRec(id).saved }); refreshActions(id); renderSaved();
+}
+
+// ── Inject / refresh action bar ───────────────────────
+function buildActions(id) {
+  const rec = getRec(id);
+  const rating = rec.rating || 0;
+  const noteLabel = rec.note ? '📝 Edit note' : '+ Note';
+  const saveLabel = rec.saved ? '♥ Saved' : '♡ Save';
+  return '<div class="rc-actions">' +
+    buildStars(id, rating) +
+    '<button class="rc-action-btn' + (rec.note ? ' has-note' : '') + '" onclick="openNote(event,\'' + id + '\')">' + noteLabel + '</button>' +
+    '<button class="rc-save-btn' + (rec.saved ? ' saved' : '') + '" onclick="toggleSave(event,\'' + id + '\')">' + saveLabel + '</button>' +
+    '</div>';
+}
+function refreshActions(id) {
+  const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
+  const existing = card.querySelector('.rc-actions');
+  if (existing) existing.remove();
+  card.querySelector('.rc-body').insertAdjacentHTML('beforeend', buildActions(id));
+}
+function injectAllActions() {
+  document.querySelectorAll('.recipe-card[data-id]').forEach(function(card) {
+    card.querySelector('.rc-body').insertAdjacentHTML('beforeend', buildActions(card.dataset.id));
+  });
+}
+
+// ── Saved section ─────────────────────────────────────
+function renderSaved() {
+  const section = document.getElementById('savedSection');
+  const d = getRD();
+  const saved = Object.keys(d).filter(function(id) { return d[id].saved; });
+  if (!saved.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  let html = '<div class="sh">Saved for next time — ' + saved.length + ' recipe' + (saved.length > 1 ? 's' : '') + '</div><div class="saved-grid">';
+  saved.forEach(function(id) {
+    const rec = d[id];
+    const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
+    if (!card) return;
+    const name = card.querySelector('.rc-name').textContent;
+    const day  = card.querySelector('.rc-day').textContent;
+    const href = card.getAttribute('href');
+    const bg   = card.querySelector('.rc-header').style.background;
+    const stars = rec.rating ? Array.from({length:5}, function(_,i){ return i < rec.rating ? '★' : '☆'; }).join('') : '';
+    html += '<div class="saved-card">' +
+      '<div class="saved-card-bar" style="background:' + bg + '"></div>' +
+      '<div class="saved-card-body">' +
+      '<div class="saved-card-day">' + day + '</div>' +
+      '<a href="' + href + '" class="saved-card-name">' + name + '</a>' +
+      (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
+      (rec.note ? '<div class="saved-card-note">' + rec.note.substring(0,120) + (rec.note.length > 120 ? '…' : '') + '</div>' : '') +
+      '<button class="saved-card-remove" onclick="toggleSave(event,\'' + id + '\')">✕ Remove</button>' +
+      '</div></div>';
+  });
+  html += '</div>';
+  section.innerHTML = html;
+}
+
+// ── Init ──────────────────────────────────────────────
+injectAllActions();
+renderSaved();
+
 function toggleDone(e, id) {
   e.preventDefault();
   e.stopPropagation();
