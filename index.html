@@ -354,7 +354,7 @@
     <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Weeknight dinners</div>
     <div class="recipe-grid" style="margin-bottom:28px;">
 
-      <a href="recettes/pasta-miso.html" class="recipe-card">
+      <a href="recettes/pasta-miso.html" class="recipe-card" data-id="pasta-miso">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Monday · Dinner</div>
@@ -363,12 +363,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Miso</span>
+            <button class="rc-check" onclick="toggleDone(event,'pasta-miso')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/bol-cereales.html" class="recipe-card">
+      <a href="recettes/bol-cereales.html" class="recipe-card" data-id="bol-cereales">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Tuesday · Dinner</div>
@@ -377,12 +378,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Tamari</span>
+            <button class="rc-check" onclick="toggleDone(event,'bol-cereales')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/poulet-chou-savoie.html" class="recipe-card">
+      <a href="recettes/poulet-chou-savoie.html" class="recipe-card" data-id="poulet-chou-savoie">
         <div class="rc-header" style="background:var(--red)"></div>
         <div class="rc-body">
           <div class="rc-day">Wednesday · Dinner</div>
@@ -391,12 +393,13 @@
           <div class="rc-footer">
             <span class="pill pill-m">Meat</span>
             <span class="pill pill-f">Cider vinegar</span>
+            <button class="rc-check" onclick="toggleDone(event,'poulet-chou-savoie')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/dal-lentilles.html" class="recipe-card">
+      <a href="recettes/dal-lentilles.html" class="recipe-card" data-id="dal-lentilles">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Thursday · Dinner</div>
@@ -405,12 +408,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Kefir</span>
+            <button class="rc-check" onclick="toggleDone(event,'dal-lentilles')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/perche-lac.html" class="recipe-card">
+      <a href="recettes/perche-lac.html" class="recipe-card" data-id="perche-lac">
         <div class="rc-header" style="background:var(--blue)"></div>
         <div class="rc-body">
           <div class="rc-day">Friday · Dinner</div>
@@ -419,6 +423,7 @@
           <div class="rc-footer">
             <span class="pill pill-p">Pescatarian</span>
             <span class="pill pill-f">Cider vinegar</span>
+            <button class="rc-check" onclick="toggleDone(event,'perche-lac')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
@@ -429,7 +434,7 @@
     <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Weekend</div>
     <div class="recipe-grid" style="margin-bottom:28px;">
 
-      <a href="recettes/salade-betteraves.html" class="recipe-card">
+      <a href="recettes/salade-betteraves.html" class="recipe-card" data-id="salade-betteraves">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Saturday · Lunch</div>
@@ -438,12 +443,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Tamari · Cider</span>
+            <button class="rc-check" onclick="toggleDone(event,'salade-betteraves')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/shakshuka.html" class="recipe-card">
+      <a href="recettes/shakshuka.html" class="recipe-card" data-id="shakshuka">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Saturday · Dinner</div>
@@ -452,12 +458,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Sourdough bread</span>
+            <button class="rc-check" onclick="toggleDone(event,'shakshuka')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/tarte-poireaux.html" class="recipe-card">
+      <a href="recettes/tarte-poireaux.html" class="recipe-card" data-id="tarte-poireaux">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Sunday · Lunch</div>
@@ -466,12 +473,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Cider vinegar</span>
+            <button class="rc-check" onclick="toggleDone(event,'tarte-poireaux')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/veloute-choufleur.html" class="recipe-card">
+      <a href="recettes/veloute-choufleur.html" class="recipe-card" data-id="veloute-choufleur">
         <div class="rc-header" style="background:var(--green)"></div>
         <div class="rc-body">
           <div class="rc-day">Sunday · Dinner</div>
@@ -480,6 +488,7 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Miso</span>
+            <button class="rc-check" onclick="toggleDone(event,'veloute-choufleur')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
@@ -490,7 +499,7 @@
     <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Rotating starters</div>
     <div class="recipe-grid">
 
-      <a href="recettes/soupe-miso.html" class="recipe-card">
+      <a href="recettes/soupe-miso.html" class="recipe-card" data-id="soupe-miso">
         <div class="rc-header" style="background:var(--teal)"></div>
         <div class="rc-body">
           <div class="rc-day">Starter A — Mon · Wed · Fri · Sat eve · Sun eve</div>
@@ -499,12 +508,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Live miso</span>
+            <button class="rc-check" onclick="toggleDone(event,'soupe-miso')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/salade-mache.html" class="recipe-card">
+      <a href="recettes/salade-mache.html" class="recipe-card" data-id="salade-mache">
         <div class="rc-header" style="background:var(--teal)"></div>
         <div class="rc-body">
           <div class="rc-day">Starter B — Tue · Thu · Sat lunch · Sun lunch</div>
@@ -513,12 +523,13 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-f">Cider vinegar</span>
+            <button class="rc-check" onclick="toggleDone(event,'salade-mache')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
       </a>
 
-      <a href="recettes/potage-carotte.html" class="recipe-card">
+      <a href="recettes/potage-carotte.html" class="recipe-card" data-id="potage-carotte">
         <div class="rc-header" style="background:var(--teal)"></div>
         <div class="rc-body">
           <div class="rc-day">Starter C — Sat lunch · Sun lunch</div>
@@ -527,6 +538,7 @@
           <div class="rc-footer">
             <span class="pill pill-v">Vegetarian</span>
             <span class="pill pill-prep">Sunday prep</span>
+            <button class="rc-check" onclick="toggleDone(event,'potage-carotte')" title="Mark as cooked">✓</button>
             <span class="rc-link">Recipe →</span>
           </div>
         </div>
@@ -538,6 +550,22 @@
 </div>
 
 <script>
+function toggleDone(e, id) {
+  e.preventDefault();
+  e.stopPropagation();
+  const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
+  const done = card.classList.toggle('done');
+  const stored = JSON.parse(localStorage.getItem('mealDone') || '{}');
+  if (done) stored[id] = true; else delete stored[id];
+  localStorage.setItem('mealDone', JSON.stringify(stored));
+}
+(function() {
+  const stored = JSON.parse(localStorage.getItem('mealDone') || '{}');
+  document.querySelectorAll('.recipe-card[data-id]').forEach(function(card) {
+    if (stored[card.dataset.id]) card.classList.add('done');
+  });
+})();
+
 function toggleCat(header) {
   header.classList.toggle('open');
   header.nextElementSibling.classList.toggle('open');
