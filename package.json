@@ -1,0 +1,24 @@
+{
+  "name": "meal-plan",
+  "version": "1.0.0",
+  "description": "",
+  "main": "recipes.js",
+  "scripts": {
+    "test": "jest --no-coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schanceee/meal-plan.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/schanceee/meal-plan/issues"
+  },
+  "homepage": "https://github.com/schanceee/meal-plan#readme",
+  "devDependencies": {
+    "jest": "^30.3.0"
+  }
+}

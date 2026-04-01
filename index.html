@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meal plan — Late March, Lausanne</title>
   <link rel="stylesheet" href="style.css">
+  <script src="recipes.js"></script>
   <script async src="//platform.getbring.com/widgets/import.js"></script>
   <script type="application/ld+json">
   {
@@ -553,34 +554,58 @@
 </div>
 
 <!-- NOTE MODAL -->
-<div id="noteModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+<div id="noteModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('noteModal')">
   <div class="modal-box">
     <div class="modal-label">Notes for next time</div>
     <div class="modal-recipe-name" id="noteModalTitle"></div>
     <textarea id="noteText" placeholder="What would you do differently? Any tweaks, substitutions, timing notes…"></textarea>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="closeModal('noteModal')">Cancel</button>
       <button class="btn btn-teal" onclick="saveNote()">Save note</button>
     </div>
   </div>
 </div>
 
-<script>
-// ── Storage ──────────────────────────────────────────
-function getRD() { return JSON.parse(localStorage.getItem('recipeData') || '{}'); }
-function saveRD(d) { localStorage.setItem('recipeData', JSON.stringify(d)); }
-function getRec(id) { return getRD()[id] || {}; }
-function setRec(id, updates) {
-  const d = getRD(); d[id] = Object.assign(d[id] || {}, updates); saveRD(d);
-}
+<!-- ADD RECIPE MODAL -->
+<div id="addModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('addModal')">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-label">Add a recipe</div>
+    <div id="addModalError" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;"></div>
+    <div>
+      <div class="modal-label" style="margin-bottom:4px;">Name <span style="color:#c0392b">*</span></div>
+      <input id="addName" type="text" placeholder="e.g. Roasted salmon with herbs" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">
+    </div>
+    <div>
+      <div class="modal-label" style="margin-bottom:4px;">Description</div>
+      <input id="addDesc" type="text" placeholder="Short description" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">
+    </div>
+    <div>
+      <div class="modal-label" style="margin-bottom:4px;">Ingredients <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— one per line</span></div>
+      <textarea id="addIngredients" rows="4" placeholder="200g pasta&#10;1 zucchini&#10;2 tbsp olive oil" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);resize:vertical;"></textarea>
+    </div>
+    <div>
+      <div class="modal-label" style="margin-bottom:4px;">Instructions <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— one step per line</span></div>
+      <textarea id="addInstructions" rows="4" placeholder="Cook pasta al dente.&#10;Sauté zucchini in olive oil 5 min.&#10;Combine and season." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);resize:vertical;"></textarea>
+    </div>
+    <div>
+      <div class="modal-label" style="margin-bottom:4px;">Tags <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">— comma separated</span></div>
+      <input id="addTags" type="text" placeholder="italian, quick, vegetarian" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
+      <button class="btn btn-teal" onclick="saveAddRecipe()">Save recipe</button>
+    </div>
+  </div>
+</div>
 
+<script>
 // ── Stars ─────────────────────────────────────────────
 function buildStars(id, rating) {
   let h = '<div class="rc-stars">';
   for (let i = 1; i <= 5; i++) {
     h += '<span class="rc-star' + (i <= rating ? ' on' : '') + '"' +
       ' onclick="setRating(event,\'' + id + '\',' + i + ')"' +
-      ' onmouseover="hoverS(this,' + i + ',' + rating + ')"' +
+      ' onmouseover="hoverS(this,' + i + ')"' +
       ' onmouseout="resetS(this,' + rating + ')">' +
       (i <= rating ? '★' : '☆') + '</span>';
   }
@@ -598,8 +623,8 @@ function resetS(el, rating) {
 }
 function setRating(e, id, val) {
   e.preventDefault(); e.stopPropagation();
-  const cur = getRec(id).rating || 0;
-  setRec(id, { rating: cur === val ? 0 : val });
+  const cur = get(id).rating || 0;
+  set(id, { rating: cur === val ? 0 : val });
   refreshActions(id); renderSaved();
 }
 
@@ -609,29 +634,65 @@ function openNote(e, id) {
   e.preventDefault(); e.stopPropagation();
   _noteId = id;
   const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
-  document.getElementById('noteModalTitle').textContent = card.querySelector('.rc-name').textContent;
-  document.getElementById('noteText').value = getRec(id).note || '';
+  const name = card ? card.querySelector('.rc-name').textContent : get(id).name;
+  document.getElementById('noteModalTitle').textContent = name;
+  document.getElementById('noteText').value = get(id).note || '';
   document.getElementById('noteModal').style.display = 'flex';
   setTimeout(function() { document.getElementById('noteText').focus(); }, 80);
 }
 function saveNote() {
   const t = document.getElementById('noteText').value.trim();
-  setRec(_noteId, { note: t }); closeModal(); refreshActions(_noteId); renderSaved();
+  set(_noteId, { note: t }); closeModal('noteModal'); refreshActions(_noteId); renderSaved();
 }
-function closeModal() {
-  document.getElementById('noteModal').style.display = 'none'; _noteId = null;
+
+// ── Add recipe modal ──────────────────────────────────
+function openAddRecipe() {
+  ['addName','addDesc','addIngredients','addInstructions','addTags'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('addModalError').style.display = 'none';
+  document.getElementById('addModal').style.display = 'flex';
+  setTimeout(function() { document.getElementById('addName').focus(); }, 80);
 }
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeModal(); });
+function saveAddRecipe() {
+  const errEl = document.getElementById('addModalError');
+  const name = document.getElementById('addName').value;
+  try {
+    const ingredients = document.getElementById('addIngredients').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    const instructions = document.getElementById('addInstructions').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    const tags = document.getElementById('addTags').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    addCustomRecipe({ name: name, description: document.getElementById('addDesc').value, ingredients: ingredients, instructions: instructions, tags: tags });
+    closeModal('addModal');
+    renderSaved();
+  } catch(err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    document.getElementById('addName').focus();
+  }
+}
+
+// ── Close any modal ───────────────────────────────────
+function closeModal(modalId) {
+  if (modalId) { document.getElementById(modalId).style.display = 'none'; }
+  if (!modalId || modalId === 'noteModal') _noteId = null;
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeModal('noteModal'); closeModal('addModal'); }
+});
 
 // ── Save / bookmark ───────────────────────────────────
 function toggleSave(e, id) {
   e.preventDefault(); e.stopPropagation();
-  setRec(id, { saved: !getRec(id).saved }); refreshActions(id); renderSaved();
+  set(id, { saved: !get(id).saved }); refreshActions(id); renderSaved();
+}
+function deleteCustom(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  remove(id); renderSaved();
 }
 
 // ── Inject / refresh action bar ───────────────────────
 function buildActions(id) {
-  const rec = getRec(id);
+  const rec = get(id);
   const rating = rec.rating || 0;
   const noteLabel = rec.note ? '📝 Edit note' : '+ Note';
   const saveLabel = rec.saved ? '♥ Saved' : '♡ Save';
@@ -643,6 +704,7 @@ function buildActions(id) {
 }
 function refreshActions(id) {
   const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
+  if (!card) return;
   const existing = card.querySelector('.rc-actions');
   if (existing) existing.remove();
   card.querySelector('.rc-body').insertAdjacentHTML('beforeend', buildActions(id));
@@ -654,33 +716,62 @@ function injectAllActions() {
 }
 
 // ── Saved section ─────────────────────────────────────
+let _searchQuery = '';
 function renderSaved() {
   const section = document.getElementById('savedSection');
-  const d = getRD();
-  const saved = Object.keys(d).filter(function(id) { return d[id].saved; });
-  if (!saved.length) { section.style.display = 'none'; return; }
+  const all = getSaved();
+  if (!all.length) { section.style.display = 'none'; return; }
+
+  const results = searchSaved(_searchQuery);
   section.style.display = 'block';
-  let html = '<div class="sh">Saved for next time — ' + saved.length + ' recipe' + (saved.length > 1 ? 's' : '') + '</div><div class="saved-grid">';
-  saved.forEach(function(id) {
-    const rec = d[id];
-    const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
-    if (!card) return;
-    const name = card.querySelector('.rc-name').textContent;
-    const day  = card.querySelector('.rc-day').textContent;
-    const href = card.getAttribute('href');
-    const bg   = card.querySelector('.rc-header').style.background;
-    const stars = rec.rating ? Array.from({length:5}, function(_,i){ return i < rec.rating ? '★' : '☆'; }).join('') : '';
-    html += '<div class="saved-card">' +
-      '<div class="saved-card-bar" style="background:' + bg + '"></div>' +
-      '<div class="saved-card-body">' +
-      '<div class="saved-card-day">' + day + '</div>' +
-      '<a href="' + href + '" class="saved-card-name">' + name + '</a>' +
-      (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
-      (rec.note ? '<div class="saved-card-note">' + rec.note.substring(0,120) + (rec.note.length > 120 ? '…' : '') + '</div>' : '') +
-      '<button class="saved-card-remove" onclick="toggleSave(event,\'' + id + '\')">✕ Remove</button>' +
-      '</div></div>';
-  });
-  html += '</div>';
+
+  let html = '<div class="sh" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">' +
+    '<span>Saved recipes — <span id="savedCount">' + results.length + '</span> of ' + all.length + '</span>' +
+    '<button class="btn btn-teal" style="padding:6px 14px;font-size:12px;" onclick="openAddRecipe()">+ Add recipe</button>' +
+    '</div>' +
+    '<div style="margin-bottom:14px;">' +
+    '<input id="savedSearch" type="search" value="' + _searchQuery.replace(/"/g,'&quot;') + '" placeholder="Search by name, ingredient, tag…" ' +
+    'oninput="_searchQuery=this.value;renderSaved()" ' +
+    'style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">' +
+    '</div>';
+
+  if (!results.length) {
+    html += '<p style="font-size:14px;color:var(--muted);padding:12px 0;">No recipes match your search.</p>';
+  } else {
+    html += '<div class="saved-grid">';
+    results.forEach(function(rec) {
+      const id = rec.id;
+      const isCustom = rec.custom;
+      // For weekly-plan recipes, get display info from the card in the DOM
+      let name = rec.name, day = '', href = '#', bg = 'var(--green)';
+      const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
+      if (card) {
+        name = card.querySelector('.rc-name').textContent;
+        day  = card.querySelector('.rc-day').textContent;
+        href = card.getAttribute('href');
+        bg   = card.querySelector('.rc-header').style.background;
+      } else if (isCustom) {
+        day = (rec.tags || []).join(', ') || 'Custom recipe';
+        bg  = 'var(--teal)';
+      }
+      const stars = rec.rating ? Array.from({length:5}, function(_,i){ return i < rec.rating ? '★' : '☆'; }).join('') : '';
+      html += '<div class="saved-card">' +
+        '<div class="saved-card-bar" style="background:' + bg + '"></div>' +
+        '<div class="saved-card-body">' +
+        (isCustom ? '<span style="background:var(--teal-light);color:var(--teal);font-size:10px;font-family:sans-serif;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;">Custom</span> ' : '') +
+        '<div class="saved-card-day" style="margin-top:4px;">' + day + '</div>' +
+        '<a href="' + href + '" class="saved-card-name">' + name + '</a>' +
+        (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
+        (rec.note ? '<div class="saved-card-note">' + rec.note.substring(0,120) + (rec.note.length > 120 ? '…' : '') + '</div>' : '') +
+        '<div style="display:flex;gap:10px;margin-top:6px;">' +
+        '<button class="saved-card-remove" onclick="openNote(event,\'' + id + '\')">✏️ Note</button>' +
+        (isCustom ? '<button class="saved-card-remove" onclick="deleteCustom(event,\'' + id + '\')" style="color:var(--red)">✕ Delete</button>' :
+          '<button class="saved-card-remove" onclick="toggleSave(event,\'' + id + '\')">✕ Remove</button>') +
+        '</div>' +
+        '</div></div>';
+    });
+    html += '</div>';
+  }
   section.innerHTML = html;
 }
 
