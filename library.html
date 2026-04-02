@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Library</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="recipes.js"></script>
+  <script src="nav.js"></script>
+</head>
+<body>
+
+<div class="saved-page-hero">
+  <h1>Recipe Library</h1>
+  <p class="saved-page-sub" id="libSubtitle">&nbsp;</p>
+</div>
+
+<div class="container">
+
+  <div class="lib-toolbar">
+    <input id="libSearch" type="search" placeholder="Search name, ingredient, tag&hellip;"
+      oninput="_libQ=this.value;renderLibrary()"
+      style="flex:1;min-width:160px;border:1px solid var(--border);border-radius:8px;
+             padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">
+    <div class="lib-filters">
+      <button class="lib-filter active" onclick="setFilter('all',this)">All</button>
+      <button class="lib-filter" onclick="setFilter('weekly',this)">This week</button>
+      <button class="lib-filter" onclick="setFilter('custom',this)">My recipes</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0;">
+      <button class="btn btn-teal" onclick="openImportModal()">+ Import recipe</button>
+      <button class="lib-settings-btn" onclick="openApiSettings()" title="API key settings">&#9881;</button>
+    </div>
+  </div>
+
+  <div id="libraryGrid"></div>
+
+</div>
+
+<!-- ── Import / edit modal ──────────────────────────────────────── -->
+<div id="importModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeImport()">
+  <div class="modal-box" style="max-width:640px;max-height:92vh;overflow-y:auto;">
+
+    <!-- Step 1 — paste -->
+    <div id="impStep1">
+      <div class="modal-label">Import a recipe</div>
+      <p style="font-size:13px;color:var(--muted);font-family:sans-serif;margin-top:4px;line-height:1.6;">
+        Paste any recipe text &mdash; a blog post, a book page, handwritten notes, any format or language.
+      </p>
+      <textarea id="pasteArea" rows="11"
+        placeholder="Paste your recipe here&hellip;"
+        style="width:100%;border:1px solid var(--border);border-radius:8px;
+               padding:10px 12px;font-family:Georgia,serif;font-size:14px;
+               color:var(--text);resize:vertical;margin-top:10px;"></textarea>
+      <div id="parseErr" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;margin-top:6px;"></div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button class="btn btn-outline" onclick="closeImport()">Cancel</button>
+        <button id="parseBtn" class="btn btn-teal" onclick="runAiParse()">&#10024; Parse with AI</button>
+      </div>
+      <div style="text-align:center;margin-top:10px;">
+        <button onclick="runHeuristic()"
+          style="background:none;border:none;font-size:12px;color:var(--muted);
+                 cursor:pointer;font-family:sans-serif;text-decoration:underline;">
+          Parse without AI (basic)
+        </button>
+        &nbsp;&middot;&nbsp;
+        <button onclick="openBlankForm()"
+          style="background:none;border:none;font-size:12px;color:var(--muted);
+                 cursor:pointer;font-family:sans-serif;text-decoration:underline;">
+          Enter manually
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2 — review / edit form -->
+    <div id="impStep2" style="display:none;">
+      <div class="modal-label" id="impFormLabel">Review &amp; save</div>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+
+        <div>
+          <label class="modal-label" style="margin-bottom:4px;display:block;">
+            Title <span style="color:#c0392b">*</span>
+          </label>
+          <input id="fTitle" type="text"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;
+                   padding:9px 12px;font-family:Georgia,serif;font-size:15px;color:var(--text);">
+        </div>
+
+        <div>
+          <label class="modal-label" style="margin-bottom:4px;display:block;">Description</label>
+          <input id="fDesc" type="text" placeholder="Short description"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;
+                   padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+          <div>
+            <label class="modal-label" style="margin-bottom:4px;display:block;">Servings</label>
+            <input id="fServings" type="text" placeholder="4 servings"
+              style="width:100%;border:1px solid var(--border);border-radius:8px;
+                     padding:8px 10px;font-family:Georgia,serif;font-size:13px;color:var(--text);">
+          </div>
+          <div>
+            <label class="modal-label" style="margin-bottom:4px;display:block;">Prep time</label>
+            <input id="fPrep" type="text" placeholder="15 min"
+              style="width:100%;border:1px solid var(--border);border-radius:8px;
+                     padding:8px 10px;font-family:Georgia,serif;font-size:13px;color:var(--text);">
+          </div>
+          <div>
+            <label class="modal-label" style="margin-bottom:4px;display:block;">Cook time</label>
+            <input id="fCook" type="text" placeholder="30 min"
+              style="width:100%;border:1px solid var(--border);border-radius:8px;
+                     padding:8px 10px;font-family:Georgia,serif;font-size:13px;color:var(--text);">
+          </div>
+        </div>
+
+        <div>
+          <label class="modal-label" style="margin-bottom:4px;display:block;">
+            Ingredients
+            <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">&mdash; one per line</span>
+          </label>
+          <textarea id="fIngredients" rows="7"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;
+                   padding:9px 12px;font-family:Georgia,serif;font-size:14px;
+                   color:var(--text);resize:vertical;"></textarea>
+        </div>
+
+        <div>
+          <label class="modal-label" style="margin-bottom:4px;display:block;">
+            Instructions
+            <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">&mdash; one step per line</span>
+          </label>
+          <textarea id="fInstructions" rows="7"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;
+                   padding:9px 12px;font-family:Georgia,serif;font-size:14px;
+                   color:var(--text);resize:vertical;"></textarea>
+        </div>
+
+        <div>
+          <label class="modal-label" style="margin-bottom:4px;display:block;">
+            Tags
+            <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">&mdash; comma separated</span>
+          </label>
+          <input id="fTags" type="text" placeholder="vegetarian, italian, quick"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;
+                   padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);">
+        </div>
+
+        <div id="impSaveErr" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;"></div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="backToStep1()">&#8592; Back</button>
+        <button class="btn btn-teal" onclick="saveImported()">Save recipe</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Recipe detail modal ──────────────────────────────────────── -->
+<div id="detailModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeDetail()">
+  <div class="modal-box" style="max-width:600px;max-height:92vh;overflow-y:auto;">
+    <div id="detailContent"></div>
+    <div class="modal-actions" style="margin-top:16px;" id="detailActions"></div>
+  </div>
+</div>
+
+<!-- ── API settings modal ───────────────────────────────────────── -->
+<div id="apiModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeApiSettings()">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-label">Claude API key</div>
+    <p style="font-size:13px;color:var(--muted);font-family:sans-serif;line-height:1.6;margin-top:4px;">
+      Used only for AI recipe parsing. Stored in your browser only &mdash; never sent anywhere except Anthropic's API.
+      Get yours at <strong>console.anthropic.com</strong> &rarr; API Keys.
+    </p>
+    <div style="position:relative;margin-top:8px;">
+      <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-&hellip;"
+        style="width:100%;border:1px solid var(--border);border-radius:8px;
+               padding:10px 12px;font-family:monospace;font-size:13px;color:var(--text);">
+    </div>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--muted);font-family:sans-serif;cursor:pointer;">
+      <input type="checkbox" onchange="document.getElementById('apiKeyInput').type=this.checked?'text':'password'">
+      Show key
+    </label>
+    <div id="apiStatus" style="font-size:13px;font-family:sans-serif;margin-top:6px;min-height:18px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="clearApiKey()">Clear key</button>
+      <button class="btn btn-teal" onclick="saveApiKey()">Save key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Weekly plan recipe metadata ─────────────────────────────────
+var WEEKLY = [
+  { id:'pasta-miso',         name:'Pasta caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',          day:'Monday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)' },
+  { id:'bol-cereales',       name:'Grain bowl \xb7 roasted veg \xb7 lentils \xb7 tahini-tamari',            day:'Tuesday \xb7 Dinner',   tags:['vegetarian','tamari'], color:'var(--green)' },
+  { id:'poulet-chou-savoie', name:'Braised chicken \xb7 Savoy cabbage \xb7 mustard',                        day:'Wednesday \xb7 Dinner', tags:['meat'],                color:'var(--red)'   },
+  { id:'dal-lentilles',      name:'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',                       day:'Thursday \xb7 Dinner',  tags:['vegetarian','kefir'],  color:'var(--green)' },
+  { id:'perche-lac',         name:'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',          day:'Friday \xb7 Dinner',    tags:['fish'],                color:'var(--blue)'  },
+  { id:'salade-betteraves',  name:'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese',               day:'Saturday \xb7 Lunch',   tags:['vegetarian'],          color:'var(--green)' },
+  { id:'shakshuka',          name:'Spiced Shakshuka \xb7 roasted peppers \xb7 feta',                        day:'Saturday \xb7 Dinner',  tags:['vegetarian'],          color:'var(--green)' },
+  { id:'tarte-poireaux',     name:'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',                day:'Sunday \xb7 Lunch',     tags:['vegetarian'],          color:'var(--green)' },
+  { id:'veloute-choufleur',  name:'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast', day:'Sunday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)' },
+  { id:'soupe-miso',         name:'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',                       day:'Starter A',             tags:['vegetarian','miso'],   color:'var(--teal)'  },
+  { id:'salade-mache',       name:"Lamb's lettuce salad \xb7 radishes \xb7 cider-mustard dressing",         day:'Starter B',             tags:['vegetarian'],          color:'var(--teal)'  },
+  { id:'potage-carotte',     name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',               day:'Starter C',             tags:['vegetarian'],          color:'var(--teal)'  }
+];
+
+// ── State ───────────────────────────────────────────────────────
+var _libQ = '';
+var _libFilter = 'all';
+var _editId = null;
+
+// ── Render ──────────────────────────────────────────────────────
+function renderLibrary() {
+  var q = _libQ.toLowerCase().trim();
+  var allCustom = Object.entries(getAll()).map(function(e) {
+    return Object.assign({ id: e[0] }, e[1]);
+  });
+
+  var weeklyShown = _libFilter !== 'custom' ? WEEKLY.filter(function(r) {
+    if (!q) return true;
+    return r.name.toLowerCase().includes(q) || r.tags.some(function(t){ return t.includes(q); });
+  }) : [];
+
+  var customShown = _libFilter !== 'weekly' ? allCustom.filter(function(r) {
+    if (!q) return true;
+    var n = (r.name||'').toLowerCase();
+    var d = (r.description||'').toLowerCase();
+    var tg = (r.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
+    var ig = (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(q); });
+    return n.includes(q) || d.includes(q) || tg || ig;
+  }) : [];
+
+  var total = weeklyShown.length + customShown.length;
+  document.getElementById('libSubtitle').textContent =
+    total + ' recipe' + (total !== 1 ? 's' : '') +
+    (q ? ' matching \u201c' + _libQ + '\u201d' : '');
+
+  if (!total) {
+    document.getElementById('libraryGrid').innerHTML =
+      '<p style="color:var(--muted);font-size:14px;padding:32px 0;">' +
+      (q ? 'No recipes match your search.' : 'No recipes yet. Import one or add manually.') + '</p>';
+    return;
+  }
+
+  var html = '<div class="saved-grid" style="margin-top:24px;">';
+
+  weeklyShown.forEach(function(r) {
+    var rec = get(r.id);
+    html += recipeCard({
+      id: r.id, name: r.name, sub: r.day, tags: r.tags,
+      rating: rec.rating, note: rec.note, color: r.color,
+      href: 'recettes/' + r.id + '.html'
+    });
+  });
+
+  customShown.forEach(function(r) {
+    html += recipeCard({
+      id: r.id, name: r.name || 'Untitled', sub: '',
+      tags: r.tags || [], rating: r.rating, note: r.note,
+      color: 'var(--teal)', href: null,
+      servings: r.servings, prepTime: r.prepTime, cookTime: r.cookTime
+    });
+  });
+
+  html += '</div>';
+  document.getElementById('libraryGrid').innerHTML = html;
+}
+
+function recipeCard(o) {
+  var stars = o.rating
+    ? Array.from({length:5}, function(_,i){ return i < o.rating ? '\u2605' : '\u2606'; }).join('')
+    : '';
+  var meta = [];
+  if (o.servings) meta.push(o.servings);
+  if (o.prepTime) meta.push('Prep\u00a0' + o.prepTime);
+  if (o.cookTime) meta.push('Cook\u00a0' + o.cookTime);
+
+  var nameHtml = o.href
+    ? '<a href="' + o.href + '" class="saved-card-name">' + o.name + '</a>'
+    : '<div class="saved-card-name" style="cursor:pointer" onclick="openDetail(\'' + o.id + '\')">' + o.name + '</div>';
+
+  var actions = o.href ? '' :
+    '<div style="display:flex;gap:10px;margin-top:8px;">' +
+      '<button class="saved-card-remove" onclick="openDetail(\'' + o.id + '\')">View</button>' +
+      '<button class="saved-card-remove" onclick="openEditForm(\'' + o.id + '\')">Edit</button>' +
+      '<button class="saved-card-remove" style="color:var(--red)" onclick="confirmDelete(\'' + o.id + '\')">Delete</button>' +
+    '</div>';
+
+  return '<div class="saved-card">' +
+    '<div class="saved-card-bar" style="background:' + o.color + '"></div>' +
+    '<div class="saved-card-body">' +
+    (o.sub ? '<div class="saved-card-day">' + o.sub + '</div>' : '') +
+    nameHtml +
+    (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
+    (meta.length ? '<div style="font-size:11px;color:var(--muted);font-family:sans-serif;margin-top:3px;">' + meta.join('\u00b7') + '</div>' : '') +
+    (o.note ? '<div class="saved-card-note">' + o.note.substring(0,80) + (o.note.length>80?'\u2026':'') + '</div>' : '') +
+    (o.tags && o.tags.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
+        o.tags.map(function(t){ return '<span class="pill pill-prep">' + t + '</span>'; }).join('') +
+        '</div>'
+      : '') +
+    actions +
+    '</div></div>';
+}
+
+function setFilter(f, btn) {
+  _libFilter = f;
+  document.querySelectorAll('.lib-filter').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderLibrary();
+}
+
+// ── Detail modal ─────────────────────────────────────────────────
+function openDetail(id) {
+  var r = get(id);
+  if (!r || !r.name) return;
+
+  var html = '<div style="font-size:18px;font-weight:normal;margin-bottom:8px;">' + r.name + '</div>';
+  if (r.description) html += '<p style="font-size:14px;color:var(--muted);margin-bottom:12px;">' + r.description + '</p>';
+
+  var meta = [];
+  if (r.servings)  meta.push('<strong>Servings:</strong> ' + r.servings);
+  if (r.prepTime)  meta.push('<strong>Prep:</strong> ' + r.prepTime);
+  if (r.cookTime)  meta.push('<strong>Cook:</strong> ' + r.cookTime);
+  if (meta.length) html += '<p style="font-size:13px;font-family:sans-serif;margin-bottom:12px;">' + meta.join(' &middot; ') + '</p>';
+
+  if (r.tags && r.tags.length) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px;">' +
+      r.tags.map(function(t){ return '<span class="pill pill-prep">' + t + '</span>'; }).join('') + '</div>';
+  }
+
+  if (r.ingredients && r.ingredients.length) {
+    html += '<div class="modal-label" style="margin-bottom:8px;">Ingredients</div>' +
+      '<ul style="list-style:none;margin-bottom:16px;">' +
+      r.ingredients.map(function(i){
+        return '<li style="padding:5px 0;border-bottom:1px solid var(--border);font-size:14px;">' + i + '</li>';
+      }).join('') + '</ul>';
+  }
+
+  if (r.instructions && r.instructions.length) {
+    html += '<div class="modal-label" style="margin-bottom:8px;">Instructions</div><ol style="list-style:none;margin-bottom:16px;">';
+    r.instructions.forEach(function(step, i) {
+      html += '<li style="padding:10px 0 10px 44px;position:relative;border-bottom:1px solid var(--border);font-size:14px;line-height:1.6;">' +
+        '<span style="position:absolute;left:0;top:10px;width:28px;height:28px;background:var(--green);color:white;' +
+               'border-radius:50%;display:inline-flex;align-items:center;justify-content:center;' +
+               'font-family:sans-serif;font-size:12px;font-weight:700;">' + (i+1) + '</span>' +
+        step + '</li>';
+    });
+    html += '</ol>';
+  }
+
+  if (r.note) {
+    html += '<div class="modal-label" style="margin-bottom:6px;">Your notes</div>' +
+      '<p style="font-size:14px;color:var(--muted);font-style:italic;line-height:1.6;">' + r.note + '</p>';
+  }
+
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailActions').innerHTML =
+    '<button class="btn btn-outline" onclick="closeDetail()">Close</button>' +
+    '<button class="btn btn-outline" onclick="closeDetail();openEditForm(\'' + id + '\')">Edit</button>';
+
+  document.getElementById('detailModal').style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('detailModal').style.display = 'none';
+}
+
+function confirmDelete(id) {
+  var r = get(id);
+  if (confirm('Delete "' + (r.name || 'this recipe') + '"? This cannot be undone.')) {
+    remove(id);
+    window._updateGlobalBar && window._updateGlobalBar();
+    renderLibrary();
+  }
+}
+
+// ── Import modal ─────────────────────────────────────────────────
+function openImportModal() {
+  _editId = null;
+  document.getElementById('pasteArea').value = '';
+  document.getElementById('parseErr').style.display = 'none';
+  document.getElementById('impStep1').style.display = 'block';
+  document.getElementById('impStep2').style.display = 'none';
+  document.getElementById('importModal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('pasteArea').focus(); }, 80);
+}
+
+function openEditForm(id) {
+  _editId = id;
+  var r = get(id);
+  document.getElementById('impFormLabel').textContent = 'Edit recipe';
+  fillForm(r.name||'', r.description||'', r.servings||'', r.prepTime||'', r.cookTime||'',
+    (r.ingredients||[]).join('\n'), (r.instructions||[]).join('\n'), (r.tags||[]).join(', '));
+  document.getElementById('impStep1').style.display = 'none';
+  document.getElementById('impStep2').style.display = 'block';
+  document.getElementById('importModal').style.display = 'flex';
+}
+
+function openBlankForm() {
+  _editId = null;
+  document.getElementById('impFormLabel').textContent = 'Add recipe';
+  fillForm('','','','','','','','');
+  document.getElementById('impStep1').style.display = 'none';
+  document.getElementById('impStep2').style.display = 'block';
+  setTimeout(function(){ document.getElementById('fTitle').focus(); }, 80);
+}
+
+function backToStep1() {
+  document.getElementById('impStep2').style.display = 'none';
+  document.getElementById('impStep1').style.display = 'block';
+}
+
+function closeImport() {
+  document.getElementById('importModal').style.display = 'none';
+  _editId = null;
+}
+
+function fillForm(title, desc, servings, prep, cook, ingredients, instructions, tags) {
+  document.getElementById('fTitle').value = title;
+  document.getElementById('fDesc').value = desc;
+  document.getElementById('fServings').value = servings;
+  document.getElementById('fPrep').value = prep;
+  document.getElementById('fCook').value = cook;
+  document.getElementById('fIngredients').value = ingredients;
+  document.getElementById('fInstructions').value = instructions;
+  document.getElementById('fTags').value = tags;
+  document.getElementById('impSaveErr').style.display = 'none';
+}
+
+// ── AI parsing ────────────────────────────────────────────────────
+function runAiParse() {
+  var text = document.getElementById('pasteArea').value.trim();
+  if (!text) { showParseErr('Please paste a recipe first.'); return; }
+
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) {
+    showParseErr('No API key set. Click \u2699 to add your key, or use basic parsing below.');
+    return;
+  }
+
+  var btn = document.getElementById('parseBtn');
+  btn.textContent = 'Parsing\u2026';
+  btn.disabled = true;
+  document.getElementById('parseErr').style.display = 'none';
+
+  var prompt = 'Parse the following recipe text and return ONLY a valid JSON object with these exact fields:\n' +
+    '{\n' +
+    '  "title": "recipe name",\n' +
+    '  "description": "1-2 sentence description",\n' +
+    '  "servings": "e.g. 4 servings",\n' +
+    '  "prepTime": "e.g. 15 min",\n' +
+    '  "cookTime": "e.g. 30 min",\n' +
+    '  "ingredients": ["quantity + ingredient, e.g. 500g pasta"],\n' +
+    '  "instructions": ["Full text of step 1", "Full text of step 2"],\n' +
+    '  "tags": ["2-5 tags: cuisine type, dietary, quick/slow, etc."]\n' +
+    '}\n' +
+    'Rules: use "" or [] for missing fields. Return ONLY the JSON, no explanation.\n\n' +
+    'Recipe text:\n"""\n' + text + '\n"""';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(res) {
+    if (!res.ok) return res.json().then(function(e){ throw new Error(e.error && e.error.message || 'API error ' + res.status); });
+    return res.json();
+  })
+  .then(function(data) {
+    var raw = data.content && data.content[0] && data.content[0].text || '';
+    // Strip markdown code fences if present
+    var jsonStr = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    var parsed = JSON.parse(jsonStr);
+    applyParsed(parsed);
+  })
+  .catch(function(err) {
+    showParseErr('Parsing failed: ' + err.message + '. Try basic parsing or enter manually.');
+  })
+  .finally(function() {
+    btn.textContent = '\u2728 Parse with AI';
+    btn.disabled = false;
+  });
+}
+
+// ── Heuristic parser ──────────────────────────────────────────────
+function runHeuristic() {
+  var text = document.getElementById('pasteArea').value.trim();
+  if (!text) { showParseErr('Please paste a recipe first.'); return; }
+  applyParsed(parseHeuristic(text));
+}
+
+function parseHeuristic(text) {
+  var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  var title = lines[0] || '';
+
+  var ingredients = [], instructions = [], inI = false, inS = false;
+  lines.forEach(function(line) {
+    var low = line.toLowerCase();
+    if (/^ingredients?:?\s*$/.test(low) || /^what you need/.test(low)) { inI=true; inS=false; return; }
+    if (/^(instructions?|method|directions?|steps?|how to|preparation):?\s*$/.test(low)) { inS=true; inI=false; return; }
+    if (inI && /^[-\u2022*\xb7]/.test(line)) ingredients.push(line.replace(/^[-\u2022*\xb7]\s*/,''));
+    else if (inS && /^\d+[.)]\s/.test(line)) instructions.push(line.replace(/^\d+[.)]\s*/,''));
+    else if (!inI && !inS && /^[-\u2022*\xb7]/.test(line) && lines.indexOf(line) > 0) ingredients.push(line.replace(/^[-\u2022*\xb7]\s*/,''));
+  });
+
+  var svm = text.match(/serves?\s+([\d\u2013\-]+)/i) || text.match(/([\d]+)\s+servings?/i);
+  var ppm = text.match(/prep(?:\s*time)?:?\s*(\d+\s*(?:min(?:utes?)?|h(?:ours?)?))/i);
+  var ckm = text.match(/cook(?:ing)?(?:\s*time)?:?\s*(\d+\s*(?:min(?:utes?)?|h(?:ours?)?))/i);
+
+  return {
+    title: title,
+    description: '',
+    servings: svm ? svm[0] : '',
+    prepTime: ppm ? ppm[1] : '',
+    cookTime: ckm ? ckm[1] : '',
+    ingredients: ingredients,
+    instructions: instructions,
+    tags: []
+  };
+}
+
+function applyParsed(p) {
+  document.getElementById('impFormLabel').textContent = 'Review & save';
+  fillForm(
+    p.title || '',
+    p.description || '',
+    p.servings || '',
+    p.prepTime || '',
+    p.cookTime || '',
+    (p.ingredients || []).join('\n'),
+    (p.instructions || []).join('\n'),
+    (p.tags || []).join(', ')
+  );
+  document.getElementById('impStep1').style.display = 'none';
+  document.getElementById('impStep2').style.display = 'block';
+  setTimeout(function(){ document.getElementById('fTitle').focus(); }, 80);
+}
+
+function showParseErr(msg) {
+  var el = document.getElementById('parseErr');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ── Save recipe ───────────────────────────────────────────────────
+function saveImported() {
+  var title = document.getElementById('fTitle').value.trim();
+  if (!title) {
+    document.getElementById('impSaveErr').textContent = 'Title is required.';
+    document.getElementById('impSaveErr').style.display = 'block';
+    document.getElementById('fTitle').focus();
+    return;
+  }
+
+  var ingredients = document.getElementById('fIngredients').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+  var instructions = document.getElementById('fInstructions').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+  var tags = document.getElementById('fTags').value.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+
+  if (_editId) {
+    // Update existing
+    set(_editId, {
+      name: title,
+      description: document.getElementById('fDesc').value.trim(),
+      servings: document.getElementById('fServings').value.trim(),
+      prepTime: document.getElementById('fPrep').value.trim(),
+      cookTime: document.getElementById('fCook').value.trim(),
+      ingredients: ingredients,
+      instructions: instructions,
+      tags: tags
+    });
+  } else {
+    // New recipe
+    var id = 'custom-' + Date.now() + '-' + Math.floor(Math.random()*10000);
+    set(id, {
+      saved: true, custom: true,
+      name: title,
+      description: document.getElementById('fDesc').value.trim(),
+      servings: document.getElementById('fServings').value.trim(),
+      prepTime: document.getElementById('fPrep').value.trim(),
+      cookTime: document.getElementById('fCook').value.trim(),
+      ingredients: ingredients,
+      instructions: instructions,
+      tags: tags,
+      rating: 0, note: '', createdAt: Date.now()
+    });
+  }
+
+  closeImport();
+  window._updateGlobalBar && window._updateGlobalBar();
+  renderLibrary();
+}
+
+// ── API key settings ──────────────────────────────────────────────
+function openApiSettings() {
+  var existing = localStorage.getItem('claudeApiKey') || '';
+  document.getElementById('apiKeyInput').value = existing;
+  document.getElementById('apiStatus').textContent = existing ? '\u2705 Key saved' : 'No key saved';
+  document.getElementById('apiStatus').style.color = existing ? 'var(--green)' : 'var(--muted)';
+  document.getElementById('apiModal').style.display = 'flex';
+  if (!existing) setTimeout(function(){ document.getElementById('apiKeyInput').focus(); }, 80);
+}
+
+function closeApiSettings() {
+  document.getElementById('apiModal').style.display = 'none';
+}
+
+function saveApiKey() {
+  var key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { clearApiKey(); return; }
+  localStorage.setItem('claudeApiKey', key);
+  document.getElementById('apiStatus').textContent = '\u2705 Key saved';
+  document.getElementById('apiStatus').style.color = 'var(--green)';
+  setTimeout(closeApiSettings, 800);
+}
+
+function clearApiKey() {
+  localStorage.removeItem('claudeApiKey');
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('apiStatus').textContent = 'Key cleared';
+  document.getElementById('apiStatus').style.color = 'var(--muted)';
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeImport(); closeDetail(); closeApiSettings(); }
+});
+
+// ── Hook for nav.js actions (e.g. rating from global bar) ─────────
+window._onNavAction = function() { renderLibrary(); };
+
+// ── Init ──────────────────────────────────────────────────────────
+renderLibrary();
+</script>
+</body>
+</html>

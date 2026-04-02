@@ -20,6 +20,7 @@
     bar.innerHTML =
       '<a class="gb-home" href="' + root + 'index.html">Weekly plan</a>' +
       '<div class="gb-right">' +
+        '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
         '<a class="gb-saved-link" href="' + root + 'saved.html">My recipes' +
           (count ? ' <span class="gb-badge">' + count + '</span>' : '') +
         '</a>' +
