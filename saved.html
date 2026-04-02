@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My saved recipes</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="recipes.js"></script>
+  <script src="nav.js"></script>
+</head>
+<body>
+
+<div class="saved-page-hero">
+  <h1>My saved recipes</h1>
+  <p class="saved-page-sub">Rate, annotate and build your recipe collection.</p>
+</div>
+
+<div class="container">
+  <div id="savedPageSection"></div>
+</div>
+
+<script>
+// Name lookup for weekly plan recipes (fallback when name not cached in localStorage)
+var RECIPE_NAMES = {
+  'pasta-miso':          'Pasta caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',
+  'bol-cereales':        'Grain bowl \xb7 roasted vegetables \xb7 lentils \xb7 tahini-tamari',
+  'poulet-chou-savoie':  'Braised chicken white wine \xb7 Savoy cabbage \xb7 mustard',
+  'dal-lentilles':       'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',
+  'perche-lac':          'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',
+  'salade-betteraves':   'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese \xb7 walnuts',
+  'shakshuka':           'Spiced Shakshuka \xb7 roasted peppers \xb7 feta \xb7 wild garlic',
+  'tarte-poireaux':      'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',
+  'veloute-choufleur':   'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast',
+  'soupe-miso':          'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',
+  'salade-mache':        "Lamb's lettuce salad \xb7 radishes \xb7 cider-mustard dressing",
+  'potage-carotte':      'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander'
+};
+
+var _sq = '';
+
+function renderSaved() {
+  var section = document.getElementById('savedPageSection');
+  var all = getSaved();
+
+  var html =
+    '<div class="sh" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">' +
+      '<span>Saved recipes</span>' +
+      '<button class="btn btn-teal" style="padding:6px 14px;font-size:12px;" onclick="openAddRecipe()">+ Add recipe</button>' +
+    '</div>' +
+    '<div style="margin-bottom:20px;">' +
+      '<input id="savedSearch" type="search" value="' + _sq.replace(/"/g, '&quot;') + '" ' +
+        'placeholder="Search by name, ingredient, tag\u2026" ' +
+        'oninput="_sq=this.value;renderSaved()" ' +
+        'style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 14px;' +
+               'font-family:Georgia,serif;font-size:14px;color:var(--text);background:var(--surface);">' +
+    '</div>';
+
+  if (!all.length) {
+    html +=
+      '<div style="text-align:center;padding:60px 20px;color:var(--muted);">' +
+        '<p style="font-size:20px;margin-bottom:12px;color:var(--text);">No saved recipes yet</p>' +
+        '<p style="font-size:14px;line-height:1.7;">Save recipes from the weekly plan using the \u2661\u00a0Save button,<br>or add your own recipes using \u201c+ Add recipe\u201d above.</p>' +
+        '<a href="index.html" style="display:inline-block;margin-top:24px;color:var(--green);font-size:14px;font-weight:600;">\u2190 View weekly plan</a>' +
+      '</div>';
+    section.innerHTML = html;
+    return;
+  }
+
+  var results = searchSaved(_sq);
+  html += '<div style="font-size:13px;color:var(--muted);font-family:sans-serif;margin-bottom:16px;">' +
+    results.length + ' of ' + all.length + ' recipe' + (all.length !== 1 ? 's' : '') +
+    '</div>';
+
+  if (!results.length) {
+    html += '<p style="font-size:14px;color:var(--muted);padding:8px 0;">No recipes match your search.</p>';
+  } else {
+    html += '<div class="saved-grid">';
+    results.forEach(function (rec) {
+      var id = rec.id;
+      var isCustom = rec.custom;
+      var name = rec.name || RECIPE_NAMES[id] || id;
+      var escapedName = name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      var href = isCustom ? null : ('recettes/' + id + '.html');
+      var bg = isCustom ? 'var(--teal)' : 'var(--green)';
+      var stars = rec.rating
+        ? Array.from({length: 5}, function (_, i) { return i < rec.rating ? '\u2605' : '\u2606'; }).join('')
+        : '';
+
+      html +=
+        '<div class="saved-card">' +
+          '<div class="saved-card-bar" style="background:' + bg + '"></div>' +
+          '<div class="saved-card-body">' +
+            (isCustom
+              ? '<span style="background:var(--teal-light);color:var(--teal);font-size:10px;font-family:sans-serif;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;display:inline-block;margin-bottom:6px;">Custom</span>'
+              : '') +
+            (href
+              ? '<a href="' + href + '" class="saved-card-name">' + name + '</a>'
+              : '<div class="saved-card-name">' + name + '</div>') +
+            (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
+            (rec.note
+              ? '<div class="saved-card-note">' + rec.note.substring(0, 180) + (rec.note.length > 180 ? '\u2026' : '') + '</div>'
+              : '') +
+            (isCustom && rec.ingredients && rec.ingredients.length
+              ? '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6;">' +
+                  rec.ingredients.slice(0, 4).join(' \xb7 ') +
+                  (rec.ingredients.length > 4 ? ' \u2026' : '') +
+                '</div>'
+              : '') +
+            '<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">' +
+              '<button class="saved-card-remove" onclick="openNote(event,\'' + id + '\',\'' + escapedName + '\')">\u270f\ufe0f Note</button>' +
+              (isCustom
+                ? '<button class="saved-card-remove" onclick="deleteCustom(event,\'' + id + '\')" style="color:var(--red)">\u2715 Delete</button>'
+                : '<button class="saved-card-remove" onclick="toggleSave(event,\'' + id + '\')">\u2715 Remove</button>') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  section.innerHTML = html;
+
+  // Re-focus search if active
+  if (_sq) {
+    var s = document.getElementById('savedSearch');
+    if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+  }
+}
+
+// Called by nav.js after any add/update/delete action
+window._onNavAction = function () {
+  renderSaved();
+  window._updateGlobalBar && window._updateGlobalBar();
+};
+
+// Read ?q= from URL
+(function () {
+  var params = new URLSearchParams(location.search);
+  var q = params.get('q');
+  if (q) _sq = q;
+})();
+
+renderSaved();
+</script>
+</body>
+</html>

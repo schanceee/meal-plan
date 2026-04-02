@@ -338,7 +338,68 @@ a { color: inherit; text-decoration: none; }
 /* COPY SUCCESS */
 .copy-success { display: none; font-size: 12px; color: var(--teal); font-family: sans-serif; margin-left: 8px; }
 
+/* GLOBAL NAV BAR */
+.global-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: #2c2416; height: 44px;
+  display: flex; align-items: center; padding: 0 20px; gap: 16px;
+}
+.gb-home {
+  font-family: 'Helvetica Neue', sans-serif; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.75); white-space: nowrap;
+}
+.gb-home:hover { color: white; }
+.gb-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.gb-saved-link {
+  font-family: 'Helvetica Neue', sans-serif; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.85); white-space: nowrap;
+}
+.gb-saved-link:hover { color: white; }
+.gb-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #c0392b; color: white; border-radius: 10px;
+  font-size: 11px; font-family: 'Helvetica Neue', sans-serif; font-weight: 700;
+  min-width: 18px; height: 18px; padding: 0 5px; vertical-align: middle;
+}
+.gb-search {
+  width: 160px; height: 28px; padding: 0 10px;
+  border: 1px solid rgba(255,255,255,0.25); border-radius: 14px;
+  background: rgba(255,255,255,0.1); color: white;
+  font-family: 'Helvetica Neue', sans-serif; font-size: 12px;
+}
+.gb-search::placeholder { color: rgba(255,255,255,0.5); }
+.gb-search:focus { outline: none; border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.15); }
+.gb-add {
+  height: 28px; padding: 0 12px;
+  background: var(--teal); color: white; border: none; border-radius: 6px;
+  font-family: 'Helvetica Neue', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.gb-add:hover { opacity: 0.85; }
+
+/* SAVED PAGE */
+.saved-page-hero {
+  background: linear-gradient(135deg, #3d5a27 0%, #5c7a3e 50%, #7a9a5a 100%);
+  color: white; padding: 48px 24px 36px; text-align: center;
+}
+.saved-page-hero h1 { font-size: clamp(22px, 4vw, 36px); font-weight: normal; margin-bottom: 6px; }
+.saved-page-sub { font-size: 14px; opacity: 0.8; font-style: italic; }
+
+/* RECIPE PAGE ACTION BAR */
+.recipe-page-bar {
+  margin-bottom: 24px; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+.recipe-page-note {
+  width: 100%; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 13px; color: var(--muted); font-style: italic; line-height: 1.5;
+}
+
 @media (max-width: 600px) {
   .container { padding: 24px 16px 60px; }
   .bring-box { flex-direction: column; }
+  .gb-search { display: none; }
+  .gb-add { font-size: 11px; padding: 0 9px; }
 }
