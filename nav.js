@@ -275,7 +275,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     bar.id = 'globalBar';
     bar.className = 'global-bar';
     bar.innerHTML =
-      '<a class="gb-home" href="' + root + 'index.html">Weekly plan</a>' +
+      '<a class="gb-home" href="' + root + 'index.html">Home</a>' +
       '<div class="gb-right">' +
         '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
         '<a class="gb-nav-link" href="' + root + 'planner.html">Planner</a>' +

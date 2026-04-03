@@ -36,6 +36,8 @@
 
 </div>
 
+<div id="planDetails"></div>
+
 <!-- ── Slot picker modal ──────────────────────────────────── -->
 <div id="pickerModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)_closePicker()">
   <div class="modal-box" style="max-width:540px;max-height:88vh;overflow-y:auto;">
@@ -322,6 +324,7 @@ function _render() {
   });
 
   document.getElementById('plannerGrid').innerHTML = html;
+  _renderPlanDetails();
 }
 
 function _renderSlot(day, meal, data) {
@@ -827,6 +830,66 @@ function _claude(prompt, maxTokens) {
     return r.json();
   })
   .then(function(d) { return d.content&&d.content[0]&&d.content[0].text||''; });
+}
+
+// ── Plan details (below grid) ──────────────────────────────
+function _renderPlanDetails() {
+  var el = document.getElementById('planDetails');
+  if (!el) return;
+
+  var filled = [];
+  DAYS.forEach(function(d, di) {
+    MEALS.forEach(function(m) {
+      var s = _plan.slots[d+'-'+m];
+      if (s) filled.push({ day:d, dayIdx:di, meal:m, slot:s });
+    });
+  });
+
+  if (!filled.length) { el.innerHTML = ''; return; }
+
+  var byDay = {};
+  filled.forEach(function(f) {
+    if (!byDay[f.day]) byDay[f.day] = { dayIdx:f.dayIdx, meals:[] };
+    byDay[f.day].meals.push(f);
+  });
+
+  var todayStr = new Date().toDateString();
+  var html = '<div class="pd-wrap">' +
+    '<div class="pd-header">' +
+      '<span class="pd-title">Recipes this week</span>' +
+      '<span class="pd-count">' + filled.length + ' meal' + (filled.length!==1?'s':'') + ' planned</span>' +
+    '</div>' +
+    '<div class="pd-timeline">';
+
+  DAYS.forEach(function(d, di) {
+    if (!byDay[d]) return;
+    var date = _weekDate(di);
+    var dateStr = date.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    var isToday = date.toDateString() === todayStr;
+    html += '<div class="pd-day' + (isToday ? ' pd-day-today' : '') + '">' +
+      '<div class="pd-day-label">' + DAY_SHORT[di] +
+        '<span class="pd-day-num">' + dateStr + '</span>' +
+      '</div>' +
+      '<div class="pd-day-meals">';
+    byDay[d].meals.forEach(function(f) {
+      var rec = f.slot.recipeId ? _recipeById(f.slot.recipeId) : null;
+      var href = rec && rec.href ? rec.href : null;
+      html += '<div class="pd-meal">' +
+        '<span class="pd-meal-type">' + MEAL_LBL[f.meal] + '</span>' +
+        (href
+          ? '<a href="' + href + '" class="pd-meal-name pd-meal-link">' + f.slot.recipeName + ' <span class="pd-arrow">\u2197</span></a>'
+          : '<span class="pd-meal-name">' + f.slot.recipeName + '</span>') +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  if (_plan.notes) {
+    html += '<div class="pd-notes">' + _plan.notes + '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
 }
 
 // ── Keyboard ───────────────────────────────────────────────

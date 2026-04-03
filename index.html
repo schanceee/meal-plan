@@ -3,669 +3,170 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Meal plan — Late March, Lausanne</title>
+  <title>Meal Plan</title>
   <link rel="stylesheet" href="style.css">
   <script src="recipes.js"></script>
   <script src="nav.js"></script>
-  <script async src="//platform.getbring.com/widgets/import.js"></script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org/",
-    "@type": "Recipe",
-    "name": "Shopping list — Weekly meal plan late March",
-    "description": "Complete shopping list for the week: 12 recipes for 2 adults, Lausanne, late March. Mostly vegetarian, fermented ingredients, Sunday meal prep.",
-    "recipeYield": "2 adults, 1 week",
-    "prepTime": "PT2H",
-    "cookTime": "PT7D",
-    "recipeCategory": "Meal prep, Shopping list",
-    "keywords": "meal prep, vegetarian, fermented, seasonal, lausanne, march",
-    "recipeIngredient": [
-      "8 yellow onions",
-      "6 leeks",
-      "4 beets",
-      "6 carrots",
-      "1 celeriac",
-      "1 whole cauliflower",
-      "1 Savoy cabbage",
-      "400g fresh spinach",
-      "200g lamb's lettuce",
-      "1 bunch pink radishes",
-      "8 potatoes",
-      "3 shallots",
-      "1 head of garlic",
-      "1 bunch wild garlic",
-      "1 piece fresh ginger",
-      "2 red peppers",
-      "2 lemons",
-      "1 orange",
-      "1 bunch fresh coriander",
-      "a few fresh sage sprigs",
-      "400g green lentils du Puy",
-      "300g farro or spelt",
-      "500g rigatoni or tagliatelle pasta",
-      "300g basmati rice",
-      "1 roll puff pastry",
-      "30g dried wakame",
-      "4 chicken thighs",
-      "4 Lake Geneva perch fillets",
-      "250g grated AOP Gruyère",
-      "150g feta",
-      "150g fresh goat cheese",
-      "200ml thick crème fraîche",
-      "500ml kefir or fermented yogurt",
-      "200ml coconut milk",
-      "8 eggs",
-      "200g butter",
-      "200g white miso shiro miso",
-      "tamari",
-      "unfiltered apple cider vinegar",
-      "200g tahini",
-      "harissa",
-      "whole-grain mustard",
-      "sourdough bread",
-      "300g silken tofu",
-      "2 cans crushed tomatoes 400g",
-      "100g walnuts",
-      "100g sunflower seeds",
-      "50g hazelnuts",
-      "1L vegetable stock",
-      "extra-virgin olive oil",
-      "hazelnut oil",
-      "cumin seeds and ground",
-      "ground coriander",
-      "ground turmeric",
-      "smoked paprika",
-      "dried chili",
-      "dried thyme",
-      "bay leaves",
-      "nutmeg"
-    ],
-    "recipeInstructions": [
-      { "@type": "HowToStep", "text": "Shop according to the complete list below." }
-    ]
-  }
-  </script>
 </head>
 <body>
 
-<div class="hero">
-  <h1>Weekly meal plan</h1>
-  <p class="sub">Late March · Lausanne · 2 adults</p>
-  <div class="tags">
-    <span class="tag">Seasonal produce</span>
-    <span class="tag">Mostly vegetarian</span>
-    <span class="tag">2h Sunday prep</span>
-    <span class="tag">Fermented · gut health</span>
-    <span class="tag">Starter with every meal</span>
-  </div>
+<div class="dash-hero">
+  <div class="dash-greeting" id="dashGreeting">Good evening</div>
+  <div class="dash-date" id="dashDate"></div>
 </div>
 
-<div class="container">
+<div class="container" style="max-width:860px;padding-top:32px;padding-bottom:80px;">
 
-  <!-- BRING IMPORT -->
-  <div class="bring-box" style="margin-bottom:40px;">
-    <div class="bring-info">
-      <h3>Import the full list into Bring!</h3>
-      <p>Tap the Bring! button to import all week's ingredients at once — or copy the list to add manually.</p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-      <div data-bring-import="" data-bring-language="fr"></div>
-      <button class="btn btn-outline" onclick="copyAllIngredients()">Copy full list</button>
-      <span class="copy-success" id="copyMsg">✓ Copied!</span>
-    </div>
+  <!-- Today -->
+  <div class="dash-section">
+    <div class="dash-section-title">Today</div>
+    <div id="dashToday"></div>
   </div>
 
-  <!-- MEAL PREP -->
-  <div style="margin-bottom:48px;">
-    <div class="sh">Sunday meal prep — 2h</div>
-    <div style="background:var(--amber-light);border:1px solid #d4b87a;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;font-size:13px;color:var(--amber);font-family:'Helvetica Neue',sans-serif;">
-      <strong>Goal:</strong> prepare the bases that let you assemble meals in &lt;15 min all week. Everything keeps 4–5 days in the fridge.
+  <!-- This week -->
+  <div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">This week</div>
+      <a href="planner.html" class="dash-link">Edit in planner &rarr;</a>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="background:var(--amber);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:sans-serif;flex-shrink:0;">1</span>
-          <strong style="font-size:14px;">Oven at 200°C — Roasted vegetables (45 min)</strong>
-        </div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Use <strong>two trays</strong> side by side:</p>
-        <ul style="font-size:13px;color:var(--muted);line-height:1.8;margin:8px 0 0 16px;">
-          <li><strong>Tray 1 — Carrots (6–8, whole or halved):</strong> peel, toss with olive oil + salt. These go into the carrot-ginger soup (step 4) and as toppings for the grain bowls (Tuesday + Saturday).</li>
-          <li><strong>Tray 2 — Beets (4, quartered) + Celeriac (½, 2cm cubes):</strong> peel, toss with olive oil + salt. Beets go into the warm beet & lentil salad (Saturday lunch). Celeriac goes into the grain bowls.</li>
-        </ul>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px;">Roast both trays 40–45 min until caramelised. Let cool, store in separate containers.</p>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="background:var(--amber);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:sans-serif;flex-shrink:0;">2</span>
-          <strong style="font-size:14px;">Farro (30 min, while the oven runs)</strong>
-        </div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Rinse <strong>300g farro</strong>. Cook in generously salted boiling water for 25–30 min until tender but still chewy — taste to check. Drain well, spread on a tray to cool (prevents clumping). Store in a container.</p>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;"><em>Used in:</em> Grain bowl with tahini-tamari dressing (Tuesday dinner + Wednesday lunch) · Warm beet & farro salad (Saturday lunch).</p>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="background:var(--amber);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:sans-serif;flex-shrink:0;">3</span>
-          <strong style="font-size:14px;">Green lentils (25 min, while the oven runs)</strong>
-        </div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Rinse <strong>400g green lentils du Puy</strong>. Cover with cold water (2× their volume) + 1 onion halved + 1 bay leaf + 2 thyme sprigs. Bring to a boil, then simmer 20–25 min. They must hold their shape — stop cooking when just tender. Drain, discard aromatics, season with salt. Cool and store.</p>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;"><em>Used in:</em> Grain bowl (Tuesday dinner + Wednesday lunch) · Warm beet & lentil salad (Saturday lunch) · Dal (Thursday dinner — uses a separate 400g batch cooked fresh that evening, these are for the bowls and salad).</p>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="background:var(--amber);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:sans-serif;flex-shrink:0;">4</span>
-          <strong style="font-size:14px;">Caramelized onions (45 min, low heat)</strong>
-        </div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Thinly slice <strong>8 large yellow onions</strong>. Heat 3 tbsp olive oil + 30g butter in a wide pan over the <strong>lowest possible heat</strong>. Add onions + a pinch of salt. Cook 40–45 min, stirring every 5–10 min, until deep golden brown and jammy. Do not rush with high heat — they'll turn bitter.</p>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;"><em>Used in:</em> Pasta with caramelized onions, white miso & Gruyère (Monday dinner + Tuesday lunch).</p>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="background:var(--amber);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:sans-serif;flex-shrink:0;">5</span>
-          <strong style="font-size:14px;">Carrot-ginger soup (15 min, once carrots are roasted)</strong>
-        </div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Take all the <strong>roasted carrots from step 1</strong>. Blend with <strong>700ml hot vegetable stock</strong> + <strong>3–4cm fresh ginger, grated</strong>. Once smooth, add <strong>200ml coconut milk</strong> and blend again until very silky. Off heat, add <strong>juice of 1 lemon</strong> gradually, tasting as you go. Season with salt and pepper. Pour into a jar or container.</p>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;"><em>Used as:</em> Starter C — served warm with fresh coriander + a drizzle of olive oil (Saturday lunch · Sunday lunch). Reheat gently, thin with a splash of stock if too thick.</p>
-      </div>
-
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <span style="background:var(--amber);color:white;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:sans-serif;flex-shrink:0;">6</span>
-          <strong style="font-size:14px;">Miso soup base (10 min)</strong>
-        </div>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;">Soak <strong>30g dried wakame</strong> in cold water for 5 min, drain and roughly chop. Bring <strong>1.5L light vegetable stock</strong> to a gentle simmer (not a boil). Add <strong>2 leeks, thinly sliced</strong> + the wakame. Simmer 5 min. Let cool, store in a pot — <strong>do not add miso yet.</strong></p>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;"><em>When serving:</em> reheat to ~70°C (hot but not boiling). Add <strong>50g silken tofu per person</strong>, cut in cubes. Dissolve <strong>1 tbsp white miso per person</strong> in a ladle of hot broth, then stir into the pot. Never boil after adding miso — the heat destroys the live bacteria.</p>
-        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:6px;"><em>Used as:</em> Starter A — Monday · Wednesday · Friday dinners · Saturday dinner · Sunday dinner.</p>
-      </div>
-
-      <div style="background:var(--teal-light);border:1px solid #b0d4cc;border-radius:var(--radius);padding:14px 20px;font-size:13px;color:var(--teal);">
-        <strong>What's ready:</strong> roasted carrots · roasted beets + celeriac · cooked farro · cooked lentils · caramelized onions · carrot-ginger soup · miso soup base — the whole week assembles in under 15 min per meal.
-      </div>
-
-    </div>
+    <div id="dashWeek"></div>
   </div>
 
-  <!-- SHOPPING LIST -->
-  <div style="margin-bottom:48px;">
-    <div class="sh">Shopping list — full week for 2</div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header open" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🥬</span>
-        <span class="shop-cat-name">Vegetables &amp; fresh fruit</span>
-        <span class="shop-cat-count">20 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items open">
-        <ul>
-          <li><span class="qty">8</span><span class="item">Yellow onions</span></li>
-          <li><span class="qty">6</span><span class="item">Leeks (medium)</span></li>
-          <li><span class="qty">4</span><span class="item">Beets</span></li>
-          <li><span class="qty">6–8</span><span class="item">Carrots</span></li>
-          <li><span class="qty">1</span><span class="item">Celeriac</span></li>
-          <li><span class="qty">1</span><span class="item">Whole cauliflower</span></li>
-          <li><span class="qty">1</span><span class="item">Savoy cabbage</span></li>
-          <li><span class="qty">400g</span><span class="item">Fresh spinach</span></li>
-          <li><span class="qty">200g</span><span class="item">Lamb's lettuce</span></li>
-          <li><span class="qty">1 bunch</span><span class="item">Pink radishes</span></li>
-          <li><span class="qty">8</span><span class="item">Potatoes</span></li>
-          <li><span class="qty">3</span><span class="item">Shallots</span></li>
-          <li><span class="qty">1 head</span><span class="item">Garlic</span></li>
-          <li><span class="qty">1 bunch</span><span class="item">Wild garlic (if available)</span></li>
-          <li><span class="qty">1 piece</span><span class="item">Fresh ginger (5 cm)</span></li>
-          <li><span class="qty">2</span><span class="item">Red peppers</span></li>
-          <li><span class="qty">2</span><span class="item">Lemons</span></li>
-          <li><span class="qty">1</span><span class="item">Orange</span></li>
-          <li><span class="qty">1 bunch</span><span class="item">Fresh coriander</span></li>
-          <li><span class="qty">a few sprigs</span><span class="item">Fresh sage</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🌾</span>
-        <span class="shop-cat-name">Grains, legumes &amp; starches</span>
-        <span class="shop-cat-count">6 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items">
-        <ul>
-          <li><span class="qty">400g</span><span class="item">Green lentils du Puy</span></li>
-          <li><span class="qty">300g</span><span class="item">Farro or spelt</span></li>
-          <li><span class="qty">500g</span><span class="item">Pasta (rigatoni or tagliatelle)</span></li>
-          <li><span class="qty">300g</span><span class="item">Basmati rice</span></li>
-          <li><span class="qty">1 roll</span><span class="item">Puff pastry</span></li>
-          <li><span class="qty">30g</span><span class="item">Dried wakame</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🥩</span>
-        <span class="shop-cat-name">Fish &amp; meat</span>
-        <span class="shop-cat-count">2 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items">
-        <ul>
-          <li><span class="qty">4</span><span class="item">Chicken thighs</span></li>
-          <li><span class="qty">4 fillets</span><span class="item">Lake Geneva perch (or trout)</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🧀</span>
-        <span class="shop-cat-name">Dairy &amp; eggs</span>
-        <span class="shop-cat-count">8 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items">
-        <ul>
-          <li><span class="qty">250g</span><span class="item">AOP Gruyère, grated</span></li>
-          <li><span class="qty">150g</span><span class="item">Feta</span></li>
-          <li><span class="qty">150g</span><span class="item">Fresh goat cheese</span></li>
-          <li><span class="qty">200ml</span><span class="item">Thick crème fraîche</span></li>
-          <li><span class="qty">500ml</span><span class="item">Kefir or whole fermented yogurt</span></li>
-          <li><span class="qty">200ml</span><span class="item">Coconut milk</span></li>
-          <li><span class="qty">8</span><span class="item">Eggs</span></li>
-          <li><span class="qty">200g</span><span class="item">Butter</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🫙</span>
-        <span class="shop-cat-name">Fermented &amp; condiments</span>
-        <span class="shop-cat-count">8 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items">
-        <ul>
-          <li><span class="qty">200g</span><span class="item">White miso (shiro miso)</span></li>
-          <li><span class="qty">1 bottle</span><span class="item">Tamari (gluten-free fermented soy sauce)</span></li>
-          <li><span class="qty">1 bottle</span><span class="item">Unfiltered apple cider vinegar (with the mother)</span></li>
-          <li><span class="qty">200g</span><span class="item">Tahini</span></li>
-          <li><span class="qty">1 jar</span><span class="item">Harissa</span></li>
-          <li><span class="qty">1 jar</span><span class="item">Whole-grain mustard</span></li>
-          <li><span class="qty">2 loaves</span><span class="item">Sourdough bread (buy 2× during the week)</span></li>
-          <li><span class="qty">1 pack</span><span class="item">Silken tofu (300g)</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🥫</span>
-        <span class="shop-cat-name">Dry goods &amp; pantry</span>
-        <span class="shop-cat-count">8 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items">
-        <ul>
-          <li><span class="qty">2 cans</span><span class="item">Crushed tomatoes (400g each)</span></li>
-          <li><span class="qty">100g</span><span class="item">Walnuts</span></li>
-          <li><span class="qty">100g</span><span class="item">Sunflower seeds</span></li>
-          <li><span class="qty">50g</span><span class="item">Hazelnuts</span></li>
-          <li><span class="qty">1L</span><span class="item">Vegetable stock (or cubes)</span></li>
-          <li><span class="qty">1 bottle</span><span class="item">Extra-virgin olive oil</span></li>
-          <li><span class="qty">1 bottle</span><span class="item">Hazelnut oil</span></li>
-          <li><span class="qty">a few drops</span><span class="item">Sesame oil (optional)</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="shop-category">
-      <div class="shop-cat-header" onclick="toggleCat(this)">
-        <span class="shop-cat-icon">🌿</span>
-        <span class="shop-cat-name">Spices &amp; aromatics</span>
-        <span class="shop-cat-count">8 items</span>
-        <span class="shop-cat-chevron">▼</span>
-      </div>
-      <div class="shop-items">
-        <ul>
-          <li><span class="qty"></span><span class="item">Cumin seeds + ground</span></li>
-          <li><span class="qty"></span><span class="item">Ground coriander</span></li>
-          <li><span class="qty"></span><span class="item">Ground turmeric</span></li>
-          <li><span class="qty"></span><span class="item">Smoked paprika</span></li>
-          <li><span class="qty"></span><span class="item">Dried chili (flakes or whole)</span></li>
-          <li><span class="qty"></span><span class="item">Dried thyme</span></li>
-          <li><span class="qty">2</span><span class="item">Bay leaves</span></li>
-          <li><span class="qty"></span><span class="item">Nutmeg</span></li>
-        </ul>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- RECIPE GRID -->
-  <div style="margin-bottom:48px;">
-    <div class="sh">Recipes of the week</div>
-    <div style="margin-bottom:16px; font-size:14px; color:var(--muted);">
-      Click a recipe to see details, ingredients and instructions — and import into Bring!
-    </div>
-
-    <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Weeknight dinners</div>
-    <div class="recipe-grid" style="margin-bottom:28px;">
-
-      <a href="recettes/pasta-miso.html" class="recipe-card" data-id="pasta-miso">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Monday · Dinner</div>
-          <div class="rc-name">Pasta caramelized onions · miso · Gruyère · sage</div>
-          <div class="rc-desc">Deep umami, one pan, 15 active minutes.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Miso</span>
-            <button class="rc-check" onclick="toggleDone(event,'pasta-miso')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
+  <!-- Quick links -->
+  <div class="dash-section">
+    <div class="dash-section-title">Jump to</div>
+    <div class="dash-actions">
+      <a href="planner.html" class="dash-action-card">
+        <div class="dash-action-label">Planner</div>
+        <div class="dash-action-sub" id="dashPlannerSub">Build your week</div>
       </a>
-
-      <a href="recettes/bol-cereales.html" class="recipe-card" data-id="bol-cereales">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Tuesday · Dinner</div>
-          <div class="rc-name">Grain bowl · roasted vegetables · lentils · tahini-tamari</div>
-          <div class="rc-desc">Pure assembly from Sunday prep.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Tamari</span>
-            <button class="rc-check" onclick="toggleDone(event,'bol-cereales')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
+      <a href="library.html" class="dash-action-card">
+        <div class="dash-action-label">Library</div>
+        <div class="dash-action-sub" id="dashLibSub">Browse recipes</div>
       </a>
-
-      <a href="recettes/poulet-chou-savoie.html" class="recipe-card" data-id="poulet-chou-savoie">
-        <div class="rc-header" style="background:var(--red)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Wednesday · Dinner</div>
-          <div class="rc-name">Braised chicken white wine · Savoy cabbage · mustard</div>
-          <div class="rc-desc">Rich and wintry, last cold snap of the month.</div>
-          <div class="rc-footer">
-            <span class="pill pill-m">Meat</span>
-            <span class="pill pill-f">Cider vinegar</span>
-            <button class="rc-check" onclick="toggleDone(event,'poulet-chou-savoie')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/dal-lentilles.html" class="recipe-card" data-id="dal-lentilles">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Thursday · Dinner</div>
-          <div class="rc-name">Lentil Dal · cumin tadka · kefir · rice</div>
-          <div class="rc-desc">The tadka is non-negotiable. Dish of the week.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Kefir</span>
-            <button class="rc-check" onclick="toggleDone(event,'dal-lentilles')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/perche-lac.html" class="recipe-card" data-id="perche-lac">
-        <div class="rc-header" style="background:var(--blue)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Friday · Dinner</div>
-          <div class="rc-name">Lake perch · wild garlic butter · spinach · potatoes</div>
-          <div class="rc-desc">25 min, restaurant level. Well-earned end of week.</div>
-          <div class="rc-footer">
-            <span class="pill pill-p">Pescatarian</span>
-            <span class="pill pill-f">Cider vinegar</span>
-            <button class="rc-check" onclick="toggleDone(event,'perche-lac')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-    </div>
-
-    <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Weekend</div>
-    <div class="recipe-grid" style="margin-bottom:28px;">
-
-      <a href="recettes/salade-betteraves.html" class="recipe-card" data-id="salade-betteraves">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Saturday · Lunch</div>
-          <div class="rc-name">Warm beet salad · lentils · farro · goat cheese · walnuts</div>
-          <div class="rc-desc">All from prep, zero cooking, 5 min assembly.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Tamari · Cider</span>
-            <button class="rc-check" onclick="toggleDone(event,'salade-betteraves')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/shakshuka.html" class="recipe-card" data-id="shakshuka">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Saturday · Dinner</div>
-          <div class="rc-name">Spiced Shakshuka · roasted peppers · feta · wild garlic</div>
-          <div class="rc-desc">One pan, 30 min, intense flavours.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Sourdough bread</span>
-            <button class="rc-check" onclick="toggleDone(event,'shakshuka')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/tarte-poireaux.html" class="recipe-card" data-id="tarte-poireaux">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Sunday · Lunch</div>
-          <div class="rc-name">Thin leek tart · Gruyère · crème fraîche</div>
-          <div class="rc-desc">Classic, elegant, 40 min.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Cider vinegar</span>
-            <button class="rc-check" onclick="toggleDone(event,'tarte-poireaux')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/veloute-choufleur.html" class="recipe-card" data-id="veloute-choufleur">
-        <div class="rc-header" style="background:var(--green)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Sunday · Dinner</div>
-          <div class="rc-name">Cauliflower velouté · miso · hazelnuts · goat cheese toast</div>
-          <div class="rc-desc">Light and deep at the same time. Perfect end of week.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Miso</span>
-            <button class="rc-check" onclick="toggleDone(event,'veloute-choufleur')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-    </div>
-
-    <div style="margin-bottom: 12px; font-size:11px; font-family:sans-serif; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted);">Rotating starters</div>
-    <div class="recipe-grid">
-
-      <a href="recettes/soupe-miso.html" class="recipe-card" data-id="soupe-miso">
-        <div class="rc-header" style="background:var(--teal)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Starter A — Mon · Wed · Fri · Sat eve · Sun eve</div>
-          <div class="rc-name">Miso soup · leek · wakame · silken tofu</div>
-          <div class="rc-desc">Never boil the miso. 10 min.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Live miso</span>
-            <button class="rc-check" onclick="toggleDone(event,'soupe-miso')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/salade-mache.html" class="recipe-card" data-id="salade-mache">
-        <div class="rc-header" style="background:var(--teal)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Starter B — Tue · Thu · Sat lunch · Sun lunch</div>
-          <div class="rc-name">Lamb's lettuce salad · radishes · cider-mustard dressing</div>
-          <div class="rc-desc">Seasonal lamb's lettuce. Fermented dressing.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-f">Cider vinegar</span>
-            <button class="rc-check" onclick="toggleDone(event,'salade-mache')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="recettes/potage-carotte.html" class="recipe-card" data-id="potage-carotte">
-        <div class="rc-header" style="background:var(--teal)"></div>
-        <div class="rc-body">
-          <div class="rc-day">Starter C — Sat lunch · Sun lunch</div>
-          <div class="rc-name">Carrot soup · ginger · coconut milk · coriander</div>
-          <div class="rc-desc">Made during Sunday prep with roasted carrots.</div>
-          <div class="rc-footer">
-            <span class="pill pill-v">Vegetarian</span>
-            <span class="pill pill-prep">Sunday prep</span>
-            <button class="rc-check" onclick="toggleDone(event,'potage-carotte')" title="Mark as cooked">✓</button>
-            <span class="rc-link">Recipe →</span>
-          </div>
-        </div>
-      </a>
-
     </div>
   </div>
 
 </div>
 
 <script>
-// ── Inject action bars into recipe cards ──────────────
-function injectAllActions() {
-  document.querySelectorAll('.recipe-card[data-id]').forEach(function(card) {
-    card.querySelector('.rc-body').insertAdjacentHTML('beforeend', window._buildActionsHTML(card.dataset.id));
-  });
-}
-injectAllActions();
+(function () {
 
-function toggleDone(e, id) {
-  e.preventDefault();
-  e.stopPropagation();
-  const card = document.querySelector('.recipe-card[data-id="' + id + '"]');
-  const done = card.classList.toggle('done');
-  const stored = JSON.parse(localStorage.getItem('mealDone') || '{}');
-  if (done) stored[id] = true; else delete stored[id];
-  localStorage.setItem('mealDone', JSON.stringify(stored));
-}
-(function() {
-  const stored = JSON.parse(localStorage.getItem('mealDone') || '{}');
-  document.querySelectorAll('.recipe-card[data-id]').forEach(function(card) {
-    if (stored[card.dataset.id]) card.classList.add('done');
-  });
+  // ── Greeting ───────────────────────────────────────────
+  var h = new Date().getHours();
+  document.getElementById('dashGreeting').textContent =
+    h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('dashDate').textContent =
+    new Date().toLocaleDateString('en-US', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // ── Helpers ────────────────────────────────────────────
+  var DAYS      = ['mon','tue','wed','thu','fri','sat','sun'];
+  var DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var DAY_JS    = ['sun','mon','tue','wed','thu','fri','sat'];
+  var WEEKLY_HREF = {
+    'pasta-miso':        'recettes/pasta-miso.html',
+    'bol-cereales':      'recettes/bol-cereales.html',
+    'poulet-chou-savoie':'recettes/poulet-chou-savoie.html',
+    'dal-lentilles':     'recettes/dal-lentilles.html',
+    'perche-lac':        'recettes/perche-lac.html',
+    'salade-betteraves': 'recettes/salade-betteraves.html',
+    'shakshuka':         'recettes/shakshuka.html',
+    'tarte-poireaux':    'recettes/tarte-poireaux.html',
+    'veloute-choufleur': 'recettes/veloute-choufleur.html',
+    'soupe-miso':        'recettes/soupe-miso.html',
+    'salade-mache':      'recettes/salade-mache.html',
+    'potage-carotte':    'recettes/potage-carotte.html'
+  };
+
+  function getMondayKey(date) {
+    var d = new Date(date);
+    var day = d.getDay();
+    d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+    d.setHours(0,0,0,0);
+    var y = d.getFullYear(), mo = d.getMonth()+1, da = d.getDate();
+    return y+'-'+(mo<10?'0':'')+mo+'-'+(da<10?'0':'')+da;
+  }
+
+  function slotHref(slot) {
+    if (!slot || !slot.recipeId) return null;
+    return WEEKLY_HREF[slot.recipeId] || null;
+  }
+
+  // ── Load plan ──────────────────────────────────────────
+  var weekKey = getMondayKey(new Date());
+  var plan = null;
+  try { plan = JSON.parse(localStorage.getItem('weekPlan_'+weekKey)) || null; } catch(e) {}
+
+  var todayKey = DAY_JS[new Date().getDay()];
+
+  // ── Today's meals ──────────────────────────────────────
+  var todayEl = document.getElementById('dashToday');
+  if (plan && plan.slots) {
+    var todayHtml = '';
+    ['lunch','dinner'].forEach(function(meal) {
+      var slot = plan.slots[todayKey+'-'+meal];
+      var label = meal === 'lunch' ? 'Lunch' : 'Dinner';
+      var href  = slotHref(slot);
+      todayHtml +=
+        '<div class="dash-today-slot">' +
+          '<span class="dash-today-meal-type">' + label + '</span>' +
+          (slot
+            ? '<span class="dash-today-name">' + slot.recipeName + '</span>' +
+              (href ? '<a href="' + href + '" class="dash-today-link">Recipe \u2197</a>' : '')
+            : '<span class="dash-today-empty">Not planned</span>') +
+        '</div>';
+    });
+    todayEl.innerHTML = todayHtml;
+  } else {
+    todayEl.innerHTML =
+      '<div class="dash-today-slot">' +
+        '<span class="dash-today-empty">No plan for this week yet.</span>' +
+      '</div>';
+  }
+
+  // ── Week strip ─────────────────────────────────────────
+  var weekEl = document.getElementById('dashWeek');
+  if (plan && plan.slots) {
+    var weekHtml = '<div class="dash-week-strip">';
+    DAYS.forEach(function(d, di) {
+      var isToday = d === todayKey;
+      var lunch  = plan.slots[d+'-lunch'];
+      var dinner = plan.slots[d+'-dinner'];
+      var mealsHtml = '';
+      if (!lunch && !dinner) {
+        mealsHtml = '<span class="dash-week-meal-empty">\u2014</span>';
+      } else {
+        if (lunch)  mealsHtml += '<span class="dash-week-meal">L\u00b7 ' + lunch.recipeName  + '</span>';
+        if (dinner) mealsHtml += '<span class="dash-week-meal">D\u00b7 ' + dinner.recipeName + '</span>';
+      }
+      weekHtml +=
+        '<div class="dash-week-day' + (isToday ? ' dash-today-row' : '') + '">' +
+          '<span class="dash-week-day-label">' + DAY_SHORT[di] + '</span>' +
+          '<div class="dash-week-day-meals">' + mealsHtml + '</div>' +
+        '</div>';
+    });
+    weekHtml += '</div>';
+    weekEl.innerHTML = weekHtml;
+  } else {
+    weekEl.innerHTML =
+      '<div class="dash-no-plan">' +
+        '<p>No plan for this week yet.</p>' +
+        '<a href="planner.html" class="btn btn-teal">Plan this week \u2192</a>' +
+      '</div>';
+  }
+
+  // ── Quick link subtitles ───────────────────────────────
+  if (plan && plan.slots) {
+    var count = Object.values(plan.slots).filter(Boolean).length;
+    var ps = document.getElementById('dashPlannerSub');
+    if (ps) ps.textContent = count ? count + ' meal' + (count!==1?'s':'') + ' planned this week' : 'Build your week';
+  }
+  var recipeCount = typeof getSaved === 'function' ? getSaved().length : 0;
+  var ls = document.getElementById('dashLibSub');
+  if (ls && recipeCount) ls.textContent = recipeCount + ' recipe' + (recipeCount!==1?'s':'') + ' saved';
+
 })();
-
-function toggleCat(header) {
-  header.classList.toggle('open');
-  header.nextElementSibling.classList.toggle('open');
-}
-
-const ALL_INGREDIENTS = `VEGETABLES & FRUIT
-- 8 yellow onions
-- 6 leeks (medium)
-- 4 beets
-- 6-8 carrots
-- 1 celeriac
-- 1 whole cauliflower
-- 1 Savoy cabbage
-- 400g fresh spinach
-- 200g lamb's lettuce
-- 1 bunch pink radishes
-- 8 potatoes
-- 3 shallots
-- 1 head of garlic
-- 1 bunch wild garlic (if available)
-- 1 piece fresh ginger
-- 2 red peppers
-- 2 lemons
-- 1 orange
-- 1 bunch fresh coriander
-- a few sprigs of fresh sage
-
-GRAINS & LEGUMES
-- 400g green lentils du Puy
-- 300g farro or spelt
-- 500g pasta (rigatoni or tagliatelle)
-- 300g basmati rice
-- 1 roll puff pastry
-- 30g dried wakame
-
-FISH & MEAT
-- 4 chicken thighs
-- 4 Lake Geneva perch fillets (or trout)
-
-DAIRY & EGGS
-- 250g AOP Gruyère grated
-- 150g feta
-- 150g fresh goat cheese
-- 200ml thick crème fraîche
-- 500ml kefir or whole fermented yogurt
-- 200ml coconut milk
-- 8 eggs
-- 200g butter
-
-FERMENTED & CONDIMENTS
-- 200g white miso (shiro miso)
-- tamari
-- unfiltered apple cider vinegar
-- 200g tahini
-- harissa
-- whole-grain mustard
-- sourdough bread (2×)
-- 300g silken tofu
-
-DRY GOODS
-- 2 cans crushed tomatoes (400g)
-- 100g walnuts
-- 100g sunflower seeds
-- 50g hazelnuts
-- 1L vegetable stock
-- extra-virgin olive oil
-- hazelnut oil
-
-SPICES
-- cumin seeds + ground
-- ground coriander
-- ground turmeric
-- smoked paprika
-- dried chili
-- dried thyme
-- bay leaves
-- nutmeg`;
-
-function copyAllIngredients() {
-  navigator.clipboard.writeText(ALL_INGREDIENTS).then(() => {
-    const msg = document.getElementById('copyMsg');
-    msg.style.display = 'inline';
-    setTimeout(() => msg.style.display = 'none', 2500);
-  });
-}
-
-// Open all categories on load
-document.querySelectorAll('.shop-items').forEach((el, i) => {
-  if (i === 0) el.classList.add('open');
-});
 </script>
+
 </body>
 </html>
