@@ -196,6 +196,31 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
         }
       })
       .catch(function (e) { console.warn('Supabase pull error', e); });
+    _pullPlansFromSupabase();
+  }
+
+  function _pullPlansFromSupabase() {
+    if (!_supaReady() || !_session) return;
+    var tok = _session.access_token;
+    fetch(window.SUPABASE_URL + '/rest/v1/user_plans?select=*&order=week_key.desc', {
+      headers: { 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        if (!Array.isArray(rows)) return;
+        rows.forEach(function (r) {
+          var key = 'weekPlan_' + r.week_key;
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, JSON.stringify({
+              slots:     r.slots     || {},
+              notes:     r.notes     || '',
+              createdAt: new Date(r.created_at).getTime(),
+              updatedAt: new Date(r.updated_at).getTime()
+            }));
+          }
+        });
+      })
+      .catch(function (e) { console.warn('Plans pull error', e); });
   }
 
   function _syncRecipe(localId, data) {
@@ -219,6 +244,28 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       })
       .catch(function (e) { console.warn('Sync error', e); });
   }
+
+  window._syncPlan = function (weekKey, planData) {
+    if (!_supaReady() || !_session) return;
+    var tok = _session.access_token, uid = _session.user.id;
+    var body = { slots: planData.slots || {}, notes: planData.notes || '', updated_at: new Date().toISOString() };
+    fetch(window.SUPABASE_URL + '/rest/v1/user_plans?user_id=eq.' + uid + '&week_key=eq.' + encodeURIComponent(weekKey), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok, 'Prefer': 'return=representation' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        if (!rows || !rows.length) {
+          fetch(window.SUPABASE_URL + '/rest/v1/user_plans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok, 'Prefer': 'return=minimal' },
+            body: JSON.stringify(Object.assign({ user_id: uid, week_key: weekKey }, body))
+          }).catch(function (e) { console.warn('Plan insert error', e); });
+        }
+      })
+      .catch(function (e) { console.warn('Plan sync error', e); });
+  };
 
   // ── Global bar ──────────────────────────────────────────────────────────────
 

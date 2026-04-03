@@ -243,6 +243,7 @@ function _load(key) {
 function _save() {
   _plan.updatedAt = Date.now();
   localStorage.setItem('weekPlan_'+_weekKey, JSON.stringify(_plan));
+  window._syncPlan && window._syncPlan(_weekKey, _plan);
 }
 function _pastPlans(n) {
   var keys = [];
