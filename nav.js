@@ -2,6 +2,13 @@
  * nav.js — Global navigation bar + shared recipe action functions.
  * Load AFTER recipes.js. Works from root (index.html) and recettes/*.html.
  */
+
+// ── Supabase config — edit these when you have your credentials ──────────────
+// Get from: supabase.com → your project → Settings → API
+window.SUPABASE_URL  = 'YOUR_SUPABASE_URL';   // https://xxxx.supabase.co
+window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
+// ─────────────────────────────────────────────────────────────────────────────
+
 (function () {
   'use strict';
 
@@ -135,6 +142,30 @@
           '<div class="modal-actions" style="margin-top:16px;">' +
             '<button class="btn btn-outline" onclick="closeModal(\'addModal\')">Cancel</button>' +
             '<button class="btn btn-teal" onclick="_navSaveAddRecipe()">Save recipe</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      // ── Feedback / bug-report modal ──
+      '<div id="feedbackModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'feedbackModal\')">' +
+        '<div class="modal-box" style="max-width:480px;">' +
+          '<div class="modal-label">Report a bug &nbsp;&middot;&nbsp; Send feedback</div>' +
+          '<p style="font-size:13px;color:var(--muted);font-family:sans-serif;margin-top:4px;line-height:1.5;">' +
+            'Describe what happened or what you\u2019d like to improve. Type or speak.' +
+          '</p>' +
+          '<textarea id="feedbackText" rows="5" placeholder="e.g. \u201cThe planner shows the wrong week\u201d or \u201cI\u2019d love a dark mode\u2026\u201d" ' +
+            'style="width:100%;margin-top:12px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;' +
+            'font-family:Georgia,serif;font-size:14px;color:var(--text);resize:vertical;min-height:100px;box-sizing:border-box;"></textarea>' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">' +
+            '<button id="feedbackMicBtn" class="btn btn-outline" onclick="_navToggleMic()" style="padding:8px 14px;">' +
+              '\uD83C\uDF99\uFE0F Voice' +
+            '</button>' +
+            '<span id="feedbackMicStatus" style="font-size:12px;font-family:sans-serif;color:var(--muted);"></span>' +
+            '<span id="feedbackMicErr" style="display:none;font-size:12px;color:#c0392b;font-family:sans-serif;"></span>' +
+          '</div>' +
+          '<div id="feedbackErr" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;margin-top:6px;"></div>' +
+          '<div class="modal-actions" style="margin-top:16px;">' +
+            '<button class="btn btn-outline" onclick="closeModal(\'feedbackModal\')">Cancel</button>' +
+            '<button id="feedbackSubmitBtn" class="btn btn-teal" onclick="_navSubmitFeedback()">Send feedback</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -537,6 +568,128 @@
       .replace(/\s+/g, ' ').trim();
   }
 
+  // ── Feedback / bug-report ────────────────────────────────────────────────────
+
+  window.openFeedback = function () {
+    document.getElementById('feedbackText').value = '';
+    document.getElementById('feedbackErr').style.display = 'none';
+    document.getElementById('feedbackMicErr').style.display = 'none';
+    document.getElementById('feedbackMicStatus').textContent = '';
+    document.getElementById('feedbackModal').style.display = 'flex';
+    setTimeout(function () { document.getElementById('feedbackText').focus(); }, 80);
+  };
+
+  var _micActive = false;
+  var _micRecognition = null;
+
+  window._navToggleMic = function () {
+    if (_micActive) {
+      if (_micRecognition) _micRecognition.stop();
+      return;
+    }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      var e = document.getElementById('feedbackMicErr');
+      e.textContent = 'Voice not supported in this browser — please type your feedback.';
+      e.style.display = 'block';
+      return;
+    }
+    document.getElementById('feedbackMicErr').style.display = 'none';
+    _micRecognition = new SR();
+    _micRecognition.continuous = true;
+    _micRecognition.interimResults = true;
+    _micRecognition.lang = navigator.language || 'en-US';
+
+    var btn = document.getElementById('feedbackMicBtn');
+    var status = document.getElementById('feedbackMicStatus');
+    _micActive = true;
+    btn.innerHTML = '\u23F9\uFE0F Stop recording';
+    btn.style.background = '#c0392b'; btn.style.color = 'white'; btn.style.borderColor = '#c0392b';
+    status.textContent = '\u25CF Recording\u2026';
+
+    _micRecognition.onresult = function (ev) {
+      var t = '';
+      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+      document.getElementById('feedbackText').value = t;
+    };
+    _micRecognition.onerror = function (ev) {
+      _micActive = false;
+      btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      status.textContent = '';
+      if (ev.error !== 'no-speech') {
+        var e2 = document.getElementById('feedbackMicErr');
+        e2.textContent = 'Mic error: ' + ev.error + '. Check browser permissions.';
+        e2.style.display = 'block';
+      }
+    };
+    _micRecognition.onend = function () {
+      _micActive = false;
+      btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      status.textContent = '';
+    };
+    _micRecognition.start();
+  };
+
+  window._navSubmitFeedback = function () {
+    var msg = document.getElementById('feedbackText').value.trim();
+    var errEl = document.getElementById('feedbackErr');
+    if (!msg) {
+      errEl.textContent = 'Please enter a message.'; errEl.style.display = 'block'; return;
+    }
+    errEl.style.display = 'none';
+
+    // If Supabase is not yet configured, show a graceful message
+    if (!window.SUPABASE_URL || window.SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+      closeModal('feedbackModal');
+      _navShowFeedbackToast('\u26A0\uFE0F Feedback not yet connected \u2014 Supabase URL missing.');
+      return;
+    }
+
+    var btn = document.getElementById('feedbackSubmitBtn');
+    btn.textContent = 'Sending\u2026'; btn.disabled = true;
+
+    fetch(window.SUPABASE_URL + '/rest/v1/feedback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': window.SUPABASE_ANON,
+        'Authorization': 'Bearer ' + window.SUPABASE_ANON,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ message: msg, page_url: location.href })
+    })
+    .then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error('HTTP ' + r.status + ' ' + t); });
+      document.getElementById('feedbackText').value = '';
+      closeModal('feedbackModal');
+      _navShowFeedbackToast('\u2713 Feedback sent \u2014 thank you!');
+    })
+    .catch(function (err) {
+      errEl.textContent = 'Could not send: ' + err.message; errEl.style.display = 'block';
+    })
+    .finally(function () { btn.textContent = 'Send feedback'; btn.disabled = false; });
+  };
+
+  function _navShowFeedbackToast(msg) {
+    var t = document.createElement('div');
+    t.className = 'feedback-toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.add('feedback-toast-hide'); }, 2500);
+    setTimeout(function () { t.parentNode && t.parentNode.removeChild(t); }, 3000);
+  }
+
+  function injectFeedbackFab() {
+    var fab = document.createElement('button');
+    fab.id = 'feedbackFab';
+    fab.className = 'feedback-fab';
+    fab.title = 'Report a bug or send feedback';
+    fab.setAttribute('aria-label', 'Feedback');
+    fab.innerHTML = '&#128172;';
+    fab.addEventListener('click', window.openFeedback);
+    document.body.appendChild(fab);
+  }
+
   // ── API key settings ────────────────────────────────────────────────────────
 
   window.openApiSettings = function () {
@@ -673,10 +826,12 @@
     injectModals();
     renderGlobalBar();
     injectRecipePageBar();
+    injectFeedbackFab();
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') {
         closeModal('noteModal');
         closeModal('addModal');
+        closeModal('feedbackModal');
         window.closeApiSettings();
       }
     });

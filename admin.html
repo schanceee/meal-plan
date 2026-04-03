@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Feedback</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="nav.js"></script>
+  <style>
+    .admin-wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+    .fb-table { width: 100%; border-collapse: collapse; font-family: 'Helvetica Neue', sans-serif; font-size: 13px; }
+    .fb-table th { text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+    .fb-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .fb-table tr:hover td { background: var(--bg); }
+    .fb-msg { font-family: Georgia, serif; font-size: 14px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+    .fb-url { font-size: 11px; color: var(--muted); word-break: break-all; margin-top: 3px; }
+    .fb-ts { white-space: nowrap; color: var(--muted); font-size: 12px; }
+    .fb-id { font-size: 10px; color: var(--border); font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<div class="saved-page-hero">
+  <h1>Admin &mdash; Feedback</h1>
+  <p class="saved-page-sub" id="adminSub">&nbsp;</p>
+</div>
+
+<div class="admin-wrap">
+
+  <!-- Key entry form -->
+  <div id="keyForm" style="max-width:480px;margin:0 auto 40px;">
+    <p style="font-size:14px;color:var(--muted);font-family:sans-serif;line-height:1.6;margin-bottom:16px;">
+      Enter your Supabase <strong>service_role</strong> key to view all submitted feedback.<br>
+      (Project Settings &rarr; API &rarr; service_role secret)
+    </p>
+    <div style="display:flex;gap:8px;">
+      <input id="srKeyInput" type="password" placeholder="eyJhbGciOiJIUzI1NiIs&hellip;"
+        style="flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:monospace;font-size:13px;color:var(--text);box-sizing:border-box;">
+      <button class="btn btn-teal" onclick="loadFeedback()">Load</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:var(--muted);font-family:sans-serif;cursor:pointer;">
+      <input type="checkbox" onchange="document.getElementById('srKeyInput').type=this.checked?'text':'password'">
+      Show key
+    </label>
+    <div id="keyErr" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;margin-top:8px;"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="fbResults" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <span id="fbCount" style="font-size:13px;color:var(--muted);font-family:sans-serif;"></span>
+      <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;" onclick="loadFeedback()">&#8635; Refresh</button>
+    </div>
+    <table class="fb-table">
+      <thead>
+        <tr>
+          <th style="width:140px;">Date</th>
+          <th>Message</th>
+          <th style="width:100px;">ID</th>
+        </tr>
+      </thead>
+      <tbody id="fbBody"></tbody>
+    </table>
+    <div id="fbEmpty" style="display:none;padding:32px 0;color:var(--muted);font-size:14px;font-family:sans-serif;">
+      No feedback submitted yet.
+    </div>
+  </div>
+
+</div>
+
+<script>
+function loadFeedback() {
+  var key = document.getElementById('srKeyInput').value.trim();
+  var errEl = document.getElementById('keyErr');
+  errEl.style.display = 'none';
+
+  if (!key) { errEl.textContent = 'Please enter the service_role key.'; errEl.style.display = 'block'; return; }
+  if (!window.SUPABASE_URL || window.SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+    errEl.textContent = 'Supabase URL not configured in nav.js yet.'; errEl.style.display = 'block'; return;
+  }
+
+  document.getElementById('adminSub').textContent = 'Loading\u2026';
+
+  fetch(window.SUPABASE_URL + '/rest/v1/feedback?select=*&order=created_at.desc', {
+    headers: {
+      'apikey': key,
+      'Authorization': 'Bearer ' + key
+    }
+  })
+  .then(function(r) {
+    if (r.status === 401 || r.status === 403) throw new Error('Invalid key or insufficient permissions.');
+    if (!r.ok) return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t); });
+    return r.json();
+  })
+  .then(function(rows) {
+    document.getElementById('keyForm').style.display = 'none';
+    document.getElementById('fbResults').style.display = 'block';
+    document.getElementById('fbCount').textContent = rows.length + ' submission' + (rows.length !== 1 ? 's' : '');
+    document.getElementById('adminSub').textContent = rows.length + ' feedback item' + (rows.length !== 1 ? 's' : '');
+
+    if (!rows.length) {
+      document.getElementById('fbBody').innerHTML = '';
+      document.getElementById('fbEmpty').style.display = 'block';
+      return;
+    }
+    document.getElementById('fbEmpty').style.display = 'none';
+
+    document.getElementById('fbBody').innerHTML = rows.map(function(r) {
+      var d = new Date(r.created_at);
+      var ts = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) +
+               ' &middot; ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      var escapedMsg = (r.message || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var escapedUrl = (r.page_url || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return '<tr>' +
+        '<td class="fb-ts">' + ts + '</td>' +
+        '<td>' +
+          '<div class="fb-msg">' + escapedMsg + '</div>' +
+          (r.page_url ? '<div class="fb-url">' + escapedUrl + '</div>' : '') +
+        '</td>' +
+        '<td class="fb-id">' + (r.id || '').slice(0, 8) + '\u2026</td>' +
+      '</tr>';
+    }).join('');
+  })
+  .catch(function(err) {
+    errEl.textContent = err.message; errEl.style.display = 'block';
+    document.getElementById('adminSub').textContent = '\u00a0';
+  });
+}
+
+// Allow Enter key on the key input
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('srKeyInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') loadFeedback();
+  });
+});
+</script>
+</body>
+</html>
