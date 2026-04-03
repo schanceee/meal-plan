@@ -33,6 +33,13 @@
     </div>
   </div>
 
+  <div class="lib-cat-bar" id="libCatBar">
+    <button class="lib-filter active" onclick="setCatFilter('all',this)">All types</button>
+    <button class="lib-filter" onclick="setCatFilter('starter',this)">Starters</button>
+    <button class="lib-filter" onclick="setCatFilter('main',this)">Mains</button>
+    <button class="lib-filter" onclick="setCatFilter('side',this)">Sides</button>
+  </div>
+
   <div id="libraryGrid"></div>
 
 </div>
@@ -48,23 +55,24 @@
 <script>
 // ── Weekly plan recipe metadata ─────────────────────────────────
 var WEEKLY = [
-  { id:'pasta-miso',         name:'Pasta caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',          day:'Monday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)' },
-  { id:'bol-cereales',       name:'Grain bowl \xb7 roasted veg \xb7 lentils \xb7 tahini-tamari',            day:'Tuesday \xb7 Dinner',   tags:['vegetarian','tamari'], color:'var(--green)' },
-  { id:'poulet-chou-savoie', name:'Braised chicken \xb7 Savoy cabbage \xb7 mustard',                        day:'Wednesday \xb7 Dinner', tags:['meat'],                color:'var(--red)'   },
-  { id:'dal-lentilles',      name:'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',                       day:'Thursday \xb7 Dinner',  tags:['vegetarian','kefir'],  color:'var(--green)' },
-  { id:'perche-lac',         name:'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',          day:'Friday \xb7 Dinner',    tags:['fish'],                color:'var(--blue)'  },
-  { id:'salade-betteraves',  name:'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese',               day:'Saturday \xb7 Lunch',   tags:['vegetarian'],          color:'var(--green)' },
-  { id:'shakshuka',          name:'Spiced Shakshuka \xb7 roasted peppers \xb7 feta',                        day:'Saturday \xb7 Dinner',  tags:['vegetarian'],          color:'var(--green)' },
-  { id:'tarte-poireaux',     name:'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',                day:'Sunday \xb7 Lunch',     tags:['vegetarian'],          color:'var(--green)' },
-  { id:'veloute-choufleur',  name:'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast', day:'Sunday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)' },
-  { id:'soupe-miso',         name:'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',                       day:'Starter A',             tags:['vegetarian','miso'],   color:'var(--teal)'  },
-  { id:'salade-mache',       name:"Lamb's lettuce salad \xb7 radishes \xb7 cider-mustard dressing",         day:'Starter B',             tags:['vegetarian'],          color:'var(--teal)'  },
-  { id:'potage-carotte',     name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',               day:'Starter C',             tags:['vegetarian'],          color:'var(--teal)'  }
+  { id:'pasta-miso',         name:'Pasta caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',          day:'Monday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)', category:'main'    },
+  { id:'bol-cereales',       name:'Grain bowl \xb7 roasted veg \xb7 lentils \xb7 tahini-tamari',            day:'Tuesday \xb7 Dinner',   tags:['vegetarian','tamari'], color:'var(--green)', category:'main'    },
+  { id:'poulet-chou-savoie', name:'Braised chicken \xb7 Savoy cabbage \xb7 mustard',                        day:'Wednesday \xb7 Dinner', tags:['meat'],                color:'var(--red)',   category:'main'    },
+  { id:'dal-lentilles',      name:'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',                       day:'Thursday \xb7 Dinner',  tags:['vegetarian','kefir'],  color:'var(--green)', category:'main'    },
+  { id:'perche-lac',         name:'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',          day:'Friday \xb7 Dinner',    tags:['fish'],                color:'var(--blue)',  category:'main'    },
+  { id:'salade-betteraves',  name:'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese',               day:'Saturday \xb7 Lunch',   tags:['vegetarian'],          color:'var(--green)', category:'main'    },
+  { id:'shakshuka',          name:'Spiced Shakshuka \xb7 roasted peppers \xb7 feta',                        day:'Saturday \xb7 Dinner',  tags:['vegetarian'],          color:'var(--green)', category:'main'    },
+  { id:'tarte-poireaux',     name:'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',                day:'Sunday \xb7 Lunch',     tags:['vegetarian'],          color:'var(--green)', category:'main'    },
+  { id:'veloute-choufleur',  name:'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast', day:'Sunday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)', category:'starter' },
+  { id:'soupe-miso',         name:'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',                       day:'Starter A',             tags:['vegetarian','miso'],   color:'var(--teal)',  category:'starter' },
+  { id:'salade-mache',       name:"Lamb's lettuce salad \xb7 radishes \xb7 cider-mustard dressing",         day:'Starter B',             tags:['vegetarian'],          color:'var(--teal)',  category:'starter' },
+  { id:'potage-carotte',     name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',               day:'Starter C',             tags:['vegetarian'],          color:'var(--teal)',  category:'starter' }
 ];
 
 // ── State ───────────────────────────────────────────────────────
 var _libQ = '';
 var _libFilter = 'all';
+var _libCatFilter = 'all';
 
 // ── Render ──────────────────────────────────────────────────────
 function renderLibrary() {
@@ -74,17 +82,21 @@ function renderLibrary() {
   });
 
   var weeklyShown = _libFilter !== 'custom' ? WEEKLY.filter(function(r) {
+    if (_libCatFilter !== 'all' && r.category !== _libCatFilter) return false;
     if (!q) return true;
-    return r.name.toLowerCase().includes(q) || r.tags.some(function(t){ return t.includes(q); });
+    return r.name.toLowerCase().includes(q) || (r.category||'').includes(q) ||
+           r.tags.some(function(t){ return t.includes(q); });
   }) : [];
 
   var customShown = _libFilter !== 'weekly' ? allCustom.filter(function(r) {
+    if (_libCatFilter !== 'all' && (r.category || 'main') !== _libCatFilter) return false;
     if (!q) return true;
     var n = (r.name||'').toLowerCase();
     var d = (r.description||'').toLowerCase();
     var tg = (r.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
     var ig = (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(q); });
-    return n.includes(q) || d.includes(q) || tg || ig;
+    var cat = (r.category||'main').toLowerCase();
+    return n.includes(q) || d.includes(q) || tg || ig || cat.includes(q);
   }) : [];
 
   var total = weeklyShown.length + customShown.length;
@@ -104,7 +116,7 @@ function renderLibrary() {
   weeklyShown.forEach(function(r) {
     var rec = get(r.id);
     html += recipeCard({
-      id: r.id, name: r.name, sub: r.day, tags: r.tags,
+      id: r.id, name: r.name, sub: r.day, tags: r.tags, category: r.category,
       rating: rec.rating, note: rec.note, color: r.color,
       href: 'recettes/' + r.id + '.html'
     });
@@ -114,7 +126,7 @@ function renderLibrary() {
     html += recipeCard({
       id: r.id, name: r.name || 'Untitled', sub: '',
       tags: r.tags || [], rating: r.rating, note: r.note,
-      color: 'var(--teal)', href: null,
+      color: 'var(--teal)', href: null, category: r.category || 'main',
       servings: r.servings, prepTime: r.prepTime, cookTime: r.cookTime
     });
   });
@@ -143,9 +155,14 @@ function recipeCard(o) {
       '<button class="saved-card-remove" style="color:var(--red)" onclick="confirmDelete(\'' + o.id + '\')">Delete</button>' +
     '</div>';
 
+  var catBadge = (o.category && o.category !== 'main')
+    ? '<span class="lib-cat-badge lib-cat-' + o.category + '">' + o.category.charAt(0).toUpperCase() + o.category.slice(1) + '</span>'
+    : '';
+
   return '<div class="saved-card">' +
     '<div class="saved-card-bar" style="background:' + o.color + '"></div>' +
     '<div class="saved-card-body">' +
+    (catBadge ? '<div style="margin-bottom:4px;">' + catBadge + '</div>' : '') +
     (o.sub ? '<div class="saved-card-day">' + o.sub + '</div>' : '') +
     nameHtml +
     (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
@@ -162,7 +179,14 @@ function recipeCard(o) {
 
 function setFilter(f, btn) {
   _libFilter = f;
-  document.querySelectorAll('.lib-filter').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.lib-filters .lib-filter').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderLibrary();
+}
+
+function setCatFilter(f, btn) {
+  _libCatFilter = f;
+  document.querySelectorAll('#libCatBar .lib-filter').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
   renderLibrary();
 }

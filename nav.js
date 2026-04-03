@@ -18,6 +18,208 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
   var PAGE_ID = recipeIdMeta ? recipeIdMeta.content : null;
   var _navEditId = null;
 
+  // ── Auth ─────────────────────────────────────────────────────────────────────
+  var _session = (function () {
+    try { return JSON.parse(localStorage.getItem('sbSession')) || null; }
+    catch (e) { return null; }
+  })();
+
+  window._authUser  = function () { return _session && _session.user  || null; };
+  window._authToken = function () { return _session && _session.access_token || null; };
+
+  function _supaReady() {
+    return !!(window.SUPABASE_URL && window.SUPABASE_URL !== 'YOUR_SUPABASE_URL');
+  }
+  function _saveSession(s) {
+    _session = s;
+    if (s) localStorage.setItem('sbSession', JSON.stringify(s));
+    else   localStorage.removeItem('sbSession');
+  }
+  function _sbPost(path, body) {
+    return fetch(window.SUPABASE_URL + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().then(function (d) {
+        if (!r.ok) throw new Error(d.error_description || d.msg || d.message || 'Auth error ' + r.status);
+        return d;
+      });
+    });
+  }
+
+  window.openAuthModal = function (tab) {
+    var t = tab || 'signin';
+    ['signin', 'signup'].forEach(function (x) {
+      document.getElementById('authTab_' + x).classList.toggle('active', x === t);
+      document.getElementById('authForm_' + x).style.display = x === t ? 'block' : 'none';
+    });
+    document.getElementById('authErr').style.display = 'none';
+    document.getElementById('authModal').style.display = 'flex';
+    setTimeout(function () {
+      var el = document.getElementById(t === 'signin' ? 'authEmail' : 'authSignupEmail');
+      if (el) el.focus();
+    }, 80);
+  };
+
+  window.authSignIn = function () {
+    if (!_supaReady()) { _showAuthErr('Supabase not configured in nav.js yet.'); return; }
+    var email = document.getElementById('authEmail').value.trim();
+    var pass  = document.getElementById('authPassword').value;
+    if (!email || !pass) { _showAuthErr('Email and password required.'); return; }
+    var btn = document.getElementById('authSigninBtn');
+    btn.textContent = 'Signing in\u2026'; btn.disabled = true;
+    document.getElementById('authErr').style.display = 'none';
+    _sbPost('/auth/v1/token?grant_type=password', { email: email, password: pass })
+      .then(function (d) {
+        _saveSession(d); closeModal('authModal'); _updateAuthBar(); _pullFromSupabase();
+      })
+      .catch(function (e) { _showAuthErr(e.message); })
+      .finally(function () { btn.textContent = 'Sign in'; btn.disabled = false; });
+  };
+
+  window.authSignUp = function () {
+    if (!_supaReady()) { _showAuthErr('Supabase not configured in nav.js yet.'); return; }
+    var email = document.getElementById('authSignupEmail').value.trim();
+    var pass  = document.getElementById('authSignupPass').value;
+    var pass2 = document.getElementById('authSignupPass2').value;
+    if (!email || !pass) { _showAuthErr('Email and password required.'); return; }
+    if (pass !== pass2)  { _showAuthErr('Passwords do not match.'); return; }
+    if (pass.length < 8) { _showAuthErr('Password must be at least 8 characters.'); return; }
+    var btn = document.getElementById('authSignupBtn');
+    btn.textContent = 'Creating account\u2026'; btn.disabled = true;
+    document.getElementById('authErr').style.display = 'none';
+    _sbPost('/auth/v1/signup', { email: email, password: pass })
+      .then(function (d) {
+        if (d.access_token) {
+          _saveSession(d); closeModal('authModal'); _updateAuthBar(); _pushStarterRecipes();
+        } else {
+          var el = document.getElementById('authErr');
+          el.style.color = 'var(--green)';
+          el.textContent = '\u2713 Account created! Check your email to confirm, then sign in.';
+          el.style.display = 'block';
+        }
+      })
+      .catch(function (e) { _showAuthErr(e.message); })
+      .finally(function () { btn.textContent = 'Create account'; btn.disabled = false; });
+  };
+
+  window.authSignOut = function () {
+    if (_session && _supaReady()) {
+      fetch(window.SUPABASE_URL + '/auth/v1/logout', {
+        method: 'POST',
+        headers: { 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + _session.access_token }
+      }).catch(function () {});
+    }
+    _saveSession(null); _updateAuthBar();
+  };
+
+  function _showAuthErr(msg) {
+    var el = document.getElementById('authErr');
+    el.style.color = '#c0392b'; el.textContent = msg; el.style.display = 'block';
+  }
+
+  function _updateAuthBar() {
+    var sinEl = document.getElementById('gbSignIn');
+    var usEl  = document.getElementById('gbUser');
+    if (!sinEl || !usEl) return;
+    var user = _session && _session.user;
+    if (user) {
+      var ini = (user.email || 'U').charAt(0).toUpperCase();
+      sinEl.style.display = 'none'; usEl.style.display = 'flex';
+      usEl.innerHTML =
+        '<span class="gb-avatar" title="' + (user.email || '') + '">' + ini + '</span>' +
+        '<button class="gb-signout-btn" onclick="authSignOut()">Sign out</button>';
+    } else {
+      sinEl.style.display = 'flex'; usEl.style.display = 'none'; usEl.innerHTML = '';
+    }
+  }
+
+  // ── Starter recipes ──────────────────────────────────────────────────────────
+  var _STARTERS = [
+    { name: 'Classic French Onion Soup', description: 'Deeply flavoured starter with caramelized onions, beef broth, and a Gruyère crouton.', category: 'starter', servings: '4 servings', prepTime: '10 min', cookTime: '1h', ingredients: ['6 large yellow onions, thinly sliced', '50g butter', '1 tbsp olive oil', '1.5L beef or vegetable stock', '200ml dry white wine', '1 tsp sugar', '4 slices sourdough', '120g Gruyère, grated', 'Salt, black pepper'], instructions: ['Melt butter and oil over low heat. Add onions and a pinch of salt. Cook 45–50 min, stirring often, until deeply golden.', 'Add sugar, stir 1 min. Add wine, scrape the bottom, cook 3 min. Add stock, simmer 15 min. Season.', 'Toast bread, top with Gruyère and grill until bubbling. Float on each bowl of soup.'], tags: ['vegetarian', 'french', 'winter', 'soup'] },
+    { name: 'Cauliflower Soup · curry · coconut', description: 'Velvety roasted cauliflower with warming curry spices and coconut milk.', category: 'starter', servings: '4 servings', prepTime: '10 min', cookTime: '35 min', ingredients: ['1 large cauliflower, cut into florets', '1 onion, diced', '3 garlic cloves', '2 tsp curry powder', '400ml coconut milk', '700ml vegetable stock', '3 tbsp olive oil', 'Fresh coriander', 'Salt, black pepper'], instructions: ['Preheat 200°C. Toss cauliflower with 2 tbsp oil + salt. Roast 25 min until golden.', 'Sauté onion in 1 tbsp oil 5 min. Add garlic and curry powder, cook 1 min. Add cauliflower, stock, coconut milk. Simmer 10 min. Blend until smooth. Season.', 'Serve topped with coriander and reserved roasted florets.'], tags: ['vegetarian', 'vegan', 'soup', 'winter'] },
+    { name: 'Roasted Salmon · miso glaze', description: 'Quick weeknight main: miso-glazed salmon roasted in 12 minutes.', category: 'main', servings: '2 servings', prepTime: '5 min', cookTime: '12 min', ingredients: ['2 salmon fillets (180g each)', '2 tbsp white miso', '1 tbsp honey', '1 tbsp soy sauce', '1 tsp sesame oil', '1 tsp fresh ginger, grated', '1 tbsp sesame seeds', '2 spring onions'], instructions: ['Preheat oven to 220°C. Mix miso, honey, soy sauce, sesame oil and ginger into a glaze.', 'Spread glaze over salmon fillets. Roast 10–12 min until caramelized and just cooked through. Scatter sesame seeds and sliced spring onions.'], tags: ['fish', 'japanese', 'quick'] },
+    { name: 'Mushroom Risotto · parmesan · thyme', description: 'Classic creamy risotto with mixed mushrooms. A satisfying vegetarian main.', category: 'main', servings: '4 servings', prepTime: '10 min', cookTime: '30 min', ingredients: ['350g Arborio rice', '300g mixed mushrooms (cremini, porcini)', '1 shallot, diced', '2 garlic cloves', '150ml dry white wine', '1.2L warm vegetable stock', '80g Parmesan, grated', '50g butter', '3 tbsp olive oil', 'Fresh thyme', 'Salt, pepper'], instructions: ['Sauté mushrooms in 2 tbsp oil over high heat until golden, 5–6 min. Season. Set aside.', 'Soften shallot in 1 tbsp oil + half the butter. Add garlic and rice, toast 2 min. Add wine, stir until absorbed.', 'Add warm stock one ladle at a time, stirring constantly, 18–20 min total. Off heat stir in remaining butter and Parmesan. Fold in mushrooms. Season.'], tags: ['vegetarian', 'italian', 'comfort'] },
+    { name: 'Green Lentil Salad · herbs · lemon', description: 'Bright, protein-rich side that pairs with anything. Great made ahead.', category: 'side', servings: '4 servings', prepTime: '10 min', cookTime: '25 min', ingredients: ['300g Puy lentils', '1 shallot, finely diced', '4 tbsp olive oil', '2 tbsp red wine vinegar', '1 lemon, zest and juice', 'Large handful flat-leaf parsley', 'Fresh mint leaves', 'Salt, black pepper'], instructions: ['Simmer lentils in salted water 20–25 min until just tender. Drain.', 'While warm, toss with shallot, olive oil, vinegar, lemon zest and juice. Season generously.', 'Fold in herbs just before serving.'], tags: ['vegetarian', 'vegan', 'salad', 'make-ahead'] },
+    { name: 'Tabbouleh · bulgur · fresh herbs', description: 'Herb-forward Lebanese-style side with lemon and good olive oil.', category: 'side', servings: '4 servings', prepTime: '20 min', cookTime: '0 min', ingredients: ['100g fine bulgur wheat', '150g flat-leaf parsley', 'Small bunch fresh mint', '4 ripe tomatoes, finely diced', '3 spring onions, finely sliced', 'Juice of 2 lemons', '4 tbsp good olive oil', 'Salt, black pepper'], instructions: ['Pour boiling water over bulgur to just cover. Cover and soak 15–20 min until tender. Drain and squeeze dry.', 'Finely chop parsley and mint — herbs should be the star.', 'Combine bulgur, tomatoes, spring onions and herbs. Dress with lemon juice and olive oil. Season generously. Rest 10 min before serving.'], tags: ['vegetarian', 'vegan', 'lebanese', 'summer'] }
+  ];
+
+  function _pushStarterRecipes() {
+    // Load into localStorage immediately so user sees them right away
+    _STARTERS.forEach(function (r) {
+      var id = 'starter-' + Date.now() + '-' + Math.floor(Math.random() * 9999);
+      set(id, Object.assign({}, r, { saved: true, custom: true, rating: 0, note: '', createdAt: Date.now() }));
+    });
+    window._updateGlobalBar && window._updateGlobalBar();
+    window._onNavAction && window._onNavAction('add');
+
+    if (!_supaReady() || !_session) return;
+    var uid = _session.user.id, tok = _session.access_token;
+    var rows = [];
+    var local = getAll();
+    Object.keys(local).forEach(function (id) {
+      var r = local[id];
+      if (r && r.name) rows.push({ user_id: uid, local_id: id, name: r.name, description: r.description || '', servings: r.servings || '', prep_time: r.prepTime || '', cook_time: r.cookTime || '', ingredients: r.ingredients || [], instructions: r.instructions || [], tags: r.tags || [], category: r.category || 'main', rating: r.rating || 0, note: r.note || '', saved: true, custom: true });
+    });
+    _STARTERS.forEach(function (r) {
+      rows.push({ user_id: uid, local_id: null, name: r.name, description: r.description || '', servings: r.servings || '', prep_time: r.prepTime || '', cook_time: r.cookTime || '', ingredients: r.ingredients || [], instructions: r.instructions || [], tags: r.tags || [], category: r.category, rating: 0, note: '', saved: true, custom: true });
+    });
+    if (!rows.length) return;
+    fetch(window.SUPABASE_URL + '/rest/v1/user_recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(rows)
+    }).catch(function (e) { console.warn('Supabase push error', e); });
+  }
+
+  function _pullFromSupabase() {
+    if (!_supaReady() || !_session) return;
+    var tok = _session.access_token;
+    fetch(window.SUPABASE_URL + '/rest/v1/user_recipes?select=*&order=created_at.asc', {
+      headers: { 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        if (!Array.isArray(rows) || !rows.length) return;
+        var changed = false;
+        rows.forEach(function (r) {
+          var lid = r.local_id || ('sb-' + r.id.slice(0, 8));
+          if (!get(lid).name) {
+            set(lid, { name: r.name, description: r.description || '', servings: r.servings || '', prepTime: r.prep_time || '', cookTime: r.cook_time || '', ingredients: r.ingredients || [], instructions: r.instructions || [], tags: r.tags || [], category: r.category || 'main', rating: r.rating || 0, note: r.note || '', saved: true, custom: true, createdAt: new Date(r.created_at).getTime() });
+            changed = true;
+          }
+        });
+        if (changed) {
+          window._updateGlobalBar && window._updateGlobalBar();
+          window._onNavAction && window._onNavAction('add');
+        }
+      })
+      .catch(function (e) { console.warn('Supabase pull error', e); });
+  }
+
+  function _syncRecipe(localId, data) {
+    if (!_supaReady() || !_session) return;
+    var tok = _session.access_token, uid = _session.user.id;
+    var body = { name: data.name, description: data.description || '', servings: data.servings || '', prep_time: data.prepTime || '', cook_time: data.cookTime || '', ingredients: data.ingredients || [], instructions: data.instructions || [], tags: data.tags || [], category: data.category || 'main', rating: data.rating || 0, note: data.note || '', updated_at: new Date().toISOString() };
+    fetch(window.SUPABASE_URL + '/rest/v1/user_recipes?local_id=eq.' + encodeURIComponent(localId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok, 'Prefer': 'return=representation' },
+      body: JSON.stringify(body)
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        if (!rows || !rows.length) {
+          fetch(window.SUPABASE_URL + '/rest/v1/user_recipes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + tok, 'Prefer': 'return=minimal' },
+            body: JSON.stringify(Object.assign({ user_id: uid, local_id: localId, saved: true, custom: true }, body))
+          }).catch(function (e) { console.warn(e); });
+        }
+      })
+      .catch(function (e) { console.warn('Sync error', e); });
+  }
+
   // ── Global bar ──────────────────────────────────────────────────────────────
 
   function renderGlobalBar() {
@@ -34,10 +236,15 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
           (count ? ' <span class="gb-badge">' + count + '</span>' : '') +
         '</a>' +
         '<input id="gbSearch" class="gb-search" type="search" placeholder="Search saved\u2026">' +
+        '<span id="gbSignIn" style="display:flex;align-items:center;">' +
+          '<button class="gb-signin-btn" onclick="openAuthModal()">Sign in</button>' +
+        '</span>' +
+        '<span id="gbUser" style="display:none;align-items:center;gap:8px;"></span>' +
         '<button class="gb-add" onclick="openAddRecipe()">+ Add recipe</button>' +
       '</div>';
     document.body.insertBefore(bar, document.body.firstChild);
     document.body.style.paddingTop = '44px';
+    _updateAuthBar();
     document.getElementById('gbSearch').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && this.value.trim()) {
         location.href = root + 'saved.html?q=' + encodeURIComponent(this.value.trim());
@@ -63,7 +270,41 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
   function injectModals() {
     if (document.getElementById('noteModal')) return;
     var d = document.createElement('div');
+    var _inp = 'width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);box-sizing:border-box;';
     d.innerHTML =
+      // ── Auth modal ──
+      '<div id="authModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'authModal\')">' +
+        '<div class="modal-box" style="max-width:380px;">' +
+          '<div class="auth-tabs">' +
+            '<button id="authTab_signin" class="auth-tab active" onclick="openAuthModal(\'signin\')">Sign in</button>' +
+            '<button id="authTab_signup" class="auth-tab" onclick="openAuthModal(\'signup\')">Create account</button>' +
+          '</div>' +
+          // Sign-in form
+          '<div id="authForm_signin">' +
+            '<div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">' +
+              '<input id="authEmail" type="email" placeholder="Email" autocomplete="email" style="' + _inp + '">' +
+              '<input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" style="' + _inp + '">' +
+            '</div>' +
+            '<div class="modal-actions" style="margin-top:14px;">' +
+              '<button id="authSigninBtn" class="btn btn-teal" style="width:100%;" onclick="authSignIn()">Sign in</button>' +
+            '</div>' +
+            '<p style="text-align:center;margin-top:10px;font-size:12px;font-family:sans-serif;color:var(--muted);">No account yet? <button onclick="openAuthModal(\'signup\')" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;">Create one</button></p>' +
+          '</div>' +
+          // Sign-up form
+          '<div id="authForm_signup" style="display:none;">' +
+            '<div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">' +
+              '<input id="authSignupEmail" type="email" placeholder="Email" autocomplete="email" style="' + _inp + '">' +
+              '<input id="authSignupPass" type="password" placeholder="Password \u2014 min 8 characters" autocomplete="new-password" style="' + _inp + '">' +
+              '<input id="authSignupPass2" type="password" placeholder="Confirm password" autocomplete="new-password" style="' + _inp + '">' +
+              '<p style="font-size:12px;color:var(--muted);font-family:sans-serif;line-height:1.5;margin:0;">Your recipes sync across devices. Any recipes already saved on this device are migrated to your account automatically.</p>' +
+            '</div>' +
+            '<div class="modal-actions" style="margin-top:14px;">' +
+              '<button id="authSignupBtn" class="btn btn-teal" style="width:100%;" onclick="authSignUp()">Create account</button>' +
+            '</div>' +
+          '</div>' +
+          '<div id="authErr" style="display:none;font-size:13px;font-family:sans-serif;margin-top:8px;text-align:center;"></div>' +
+        '</div>' +
+      '</div>' +
       // ── Note modal ──
       '<div id="noteModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'noteModal\')">' +
         '<div class="modal-box">' +
@@ -110,6 +351,15 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
             '<div>' +
               '<div class="modal-label" style="margin-bottom:4px;">Description</div>' +
               '<input id="addDesc" type="text" placeholder="Short description" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);box-sizing:border-box;">' +
+            '</div>' +
+            '<div>' +
+              '<div class="modal-label" style="margin-bottom:6px;">Category</div>' +
+              '<div style="display:flex;gap:6px;">' +
+                '<button type="button" class="cat-pill" data-cat="starter" onclick="_navSetCat(this)">Starter</button>' +
+                '<button type="button" class="cat-pill active" data-cat="main" onclick="_navSetCat(this)">Main</button>' +
+                '<button type="button" class="cat-pill" data-cat="side" onclick="_navSetCat(this)">Side</button>' +
+              '</div>' +
+              '<input type="hidden" id="addCategory" value="main">' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">' +
               '<div>' +
@@ -249,9 +499,24 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
 
   // ── Add / edit recipe modal ─────────────────────────────────────────────────
 
-  function _navFillForm(title, desc, servings, prep, cook, ingredients, instructions, tags) {
+  window._navSetCat = function (btn) {
+    document.querySelectorAll('.cat-pill').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('addCategory').value = btn.dataset.cat;
+  };
+
+  function _navSetCatValue(cat) {
+    var c = cat || 'main';
+    document.getElementById('addCategory').value = c;
+    document.querySelectorAll('.cat-pill').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.cat === c);
+    });
+  }
+
+  function _navFillForm(title, desc, category, servings, prep, cook, ingredients, instructions, tags) {
     document.getElementById('addTitle').value = title;
     document.getElementById('addDesc').value = desc;
+    _navSetCatValue(category);
     document.getElementById('addServings').value = servings;
     document.getElementById('addPrep').value = prep;
     document.getElementById('addCook').value = cook;
@@ -267,7 +532,7 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
     document.getElementById('addUrlInput').value = '';
     document.getElementById('addPasteArea').value = '';
     document.getElementById('addParseErr').style.display = 'none';
-    _navFillForm('', '', '', '', '', '', '', '');
+    _navFillForm('', '', 'main', '', '', '', '', '', '');
     document.getElementById('addModal').style.display = 'flex';
     setTimeout(function () { document.getElementById('addUrlInput').focus(); }, 80);
   };
@@ -279,7 +544,7 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
     document.getElementById('addPasteArea').value = '';
     document.getElementById('addParseErr').style.display = 'none';
     _navFillForm(
-      r.name || '', r.description || '',
+      r.name || '', r.description || '', r.category || 'main',
       r.servings || '', r.prepTime || '', r.cookTime || '',
       (r.ingredients || []).join('\n'),
       (r.instructions || []).join('\n'),
@@ -304,6 +569,7 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
     var data = {
       name: title,
       description: document.getElementById('addDesc').value.trim(),
+      category: document.getElementById('addCategory').value || 'main',
       servings: document.getElementById('addServings').value.trim(),
       prepTime: document.getElementById('addPrep').value.trim(),
       cookTime: document.getElementById('addCook').value.trim(),
@@ -322,6 +588,7 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
       savedId = id;
     }
 
+    _syncRecipe(savedId, get(savedId));
     closeModal('addModal');
     window._updateGlobalBar();
     if (typeof window._onNavAction === 'function') window._onNavAction(_navEditId ? 'update' : 'add');
@@ -423,7 +690,7 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
 
   function _navApplyParsed(p) {
     _navFillForm(
-      p.title || '', p.description || '',
+      p.title || '', p.description || '', p.category || 'main',
       p.servings || '', p.prepTime || '', p.cookTime || '',
       (p.ingredients || []).join('\n'),
       (p.instructions || []).join('\n'),
@@ -831,6 +1098,7 @@ window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
       if (e.key === 'Escape') {
         closeModal('noteModal');
         closeModal('addModal');
+        closeModal('authModal');
         closeModal('feedbackModal');
         window.closeApiSettings();
       }
