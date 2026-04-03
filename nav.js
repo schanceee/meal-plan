@@ -279,10 +279,10 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       '<div class="gb-right">' +
         '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
         '<a class="gb-nav-link" href="' + root + 'planner.html">Planner</a>' +
-        '<a class="gb-saved-link" href="' + root + 'saved.html">My recipes' +
+        '<a class="gb-saved-link" href="' + root + 'library.html">Saved' +
           (count ? ' <span class="gb-badge">' + count + '</span>' : '') +
         '</a>' +
-        '<input id="gbSearch" class="gb-search" type="search" placeholder="Search saved\u2026">' +
+        '<input id="gbSearch" class="gb-search" type="search" placeholder="Search library\u2026">' +
         '<span id="gbSignIn" style="display:flex;align-items:center;">' +
           '<button class="gb-signin-btn" onclick="openAuthModal()">Sign in</button>' +
         '</span>' +
@@ -294,7 +294,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     _updateAuthBar();
     document.getElementById('gbSearch').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && this.value.trim()) {
-        location.href = root + 'saved.html?q=' + encodeURIComponent(this.value.trim());
+        location.href = root + 'library.html?q=' + encodeURIComponent(this.value.trim());
       }
     });
   }

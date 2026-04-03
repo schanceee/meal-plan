@@ -359,10 +359,13 @@ function _renderSlot(day, meal, data) {
   }).join('');
   var meta = get(data.recipeId || '') || {};
   var stars = meta.rating ? '\u2605'.repeat(meta.rating) : '';
+  var rec = data.recipeId ? _recipeById(data.recipeId) : null;
+  var href = rec && rec.href ? rec.href : (data.recipeId && data.recipeId.indexOf('custom-') === 0 ? 'library.html' : null);
 
   return '<div class="pg-slot pg-slot-filled' + (data.isNew ? ' pg-slot-new' : '') + '" ' +
     'onclick="_openPicker(\'' + day + '\',\'' + meal + '\')">' +
     '<button class="pg-clear" onclick="event.stopPropagation();_clearSlot(\'' + day + '\',\'' + meal + '\')" title="Remove">\xd7</button>' +
+    (href ? '<a class="pg-recipe-link" href="' + href + '" onclick="event.stopPropagation()" title="View recipe">\u2197</a>' : '') +
     '<div class="pg-slot-name">' + (data.recipeName || '') + '</div>' +
     (stars ? '<div style="color:#d4960a;font-size:10px;margin-top:2px;">' + stars + '</div>' : '') +
     (tagsHtml || data.isNew ? '<div class="pg-slot-tags">' + tagsHtml + (data.isNew ? '<span class="pg-tag pg-tag-new">new</span>' : '') + '</div>' : '') +
@@ -745,6 +748,30 @@ function _saveNewFromAi(idx) {
 function _applyAiPlan() {
   if (!_pendingAi || !_pendingAi.slots) return;
   var slots = _pendingAi.slots;
+
+  // Auto-save new AI-suggested recipes to the library
+  var seq = 0;
+  Object.keys(slots).forEach(function(k) {
+    var s = slots[k];
+    if (s && s.isNew && s.aiSuggestion) {
+      var ai = s.aiSuggestion;
+      var id = 'custom-' + Date.now() + '-' + (++seq);
+      set(id, {
+        saved: true, custom: true,
+        name: ai.name || s.recipeName,
+        description: ai.description || '',
+        ingredients: Array.isArray(ai.ingredients) ? ai.ingredients : [],
+        instructions: Array.isArray(ai.instructions) ? ai.instructions : [],
+        tags: ai.tags || s.tags || [],
+        category: ai.category || 'main',
+        rating: 0, note: '', createdAt: Date.now()
+      });
+      s.recipeId = id;
+      s.isNew = false;
+      s.aiSuggestion = null;
+    }
+  });
+
   Object.keys(slots).forEach(function(k) {
     if (Object.prototype.hasOwnProperty.call(_plan.slots, k)) {
       _plan.slots[k] = slots[k] || null;

@@ -138,7 +138,7 @@ function renderLibrary() {
     return;
   }
 
-  var html = '<div class="saved-grid" style="margin-top:24px;">';
+  var html = '<div class="recipe-grid" style="margin-top:24px;">';
 
   weeklyShown.forEach(function(r) {
     var rec = get(r.id);
@@ -182,61 +182,73 @@ function recipeCard(o) {
   var currentRating = o.rating || 0;
   var savedState = !!o.saved;
 
-  var meta = [];
-  if (o.servings) meta.push(o.servings);
-  if (o.prepTime) meta.push('Prep\u00a0' + o.prepTime);
-  if (o.cookTime) meta.push('Cook\u00a0' + o.cookTime);
+  // Tags with type-appropriate pill colors
+  var tagsHtml = (o.tags || []).slice(0, 3).map(function(t) {
+    var tl = t.toLowerCase();
+    var cls = tl === 'vegetarian' ? 'pill pill-v'
+            : (tl === 'fish' || tl === 'pescatarian') ? 'pill pill-p'
+            : (tl === 'meat' || tl === 'chicken') ? 'pill pill-m'
+            : 'pill pill-prep';
+    return '<span class="' + cls + '">' + t.charAt(0).toUpperCase() + t.slice(1) + '</span>';
+  }).join('');
 
-  var nameHtml = o.href
-    ? '<a href="' + o.href + '" class="saved-card-name">' + o.name + '</a>'
-    : '<div class="saved-card-name" style="cursor:pointer" onclick="openDetail(\'' + o.id + '\')">' + o.name + '</div>';
-
+  // Category badge
   var catBadge = (o.category && o.category !== 'main')
     ? '<span class="lib-cat-badge lib-cat-' + o.category + '">' + o.category.charAt(0).toUpperCase() + o.category.slice(1) + '</span>'
     : '';
 
-  // Interactive like + star rating + note
+  // Interactive star rating
   var starsHtml = [1,2,3,4,5].map(function(n) {
-    return '<button class="lib-star-btn' + (n <= currentRating ? ' filled' : '') + '" onclick="setRating(\'' + o.id + '\',' + n + ')">' +
-      (n <= currentRating ? '\u2605' : '\u2606') + '</button>';
+    return '<span class="rc-star' + (n <= currentRating ? ' on' : '') + '" ' +
+      'onclick="event.stopPropagation();setRating(\'' + o.id + '\',' + n + ')">' +
+      (n <= currentRating ? '\u2605' : '\u2606') + '</span>';
   }).join('');
 
-  var likeRow =
-    '<div class="lib-card-actions">' +
-      '<button class="lib-like-btn' + (savedState ? ' active' : '') + '" onclick="toggleLike(\'' + o.id + '\')" title="' + (savedState ? 'Remove from saved' : 'Save recipe') + '">' +
-        (savedState ? '\u2665' : '\u2661') +
-      '</button>' +
-      '<div class="lib-rate-stars">' + starsHtml + '</div>' +
-      '<button class="lib-note-btn" onclick="editNote(\'' + o.id + '\')" title="Edit note">\u270e</button>' +
+  // Description (custom recipes)
+  var descHtml = o.description
+    ? '<div class="rc-desc">' + o.description.substring(0, 90) + (o.description.length > 90 ? '\u2026' : '') + '</div>'
+    : '';
+
+  // Meta line (servings/prep/cook for custom)
+  var metaParts = [];
+  if (o.servings) metaParts.push(o.servings);
+  if (o.prepTime) metaParts.push('Prep ' + o.prepTime);
+  if (o.cookTime) metaParts.push('Cook ' + o.cookTime);
+  var metaHtml = metaParts.length
+    ? '<div class="rc-desc">' + metaParts.join(' \u00b7 ') + '</div>'
+    : '';
+
+  // Footer: tags + category badge + recipe link
+  var footer =
+    '<div class="rc-footer">' +
+      tagsHtml +
+      (catBadge ? catBadge : '') +
+      (o.href ? '<span class="rc-link">Recipe \u2192</span>' : '') +
     '</div>';
 
-  // View / Edit / Delete row — shown for all
-  var viewBtn = o.href
-    ? '<a href="' + o.href + '" class="saved-card-remove">View \u2197</a>'
-    : '<button class="saved-card-remove" onclick="openDetail(\'' + o.id + '\')">View</button>';
-  var editRow =
-    '<div class="lib-edit-row">' +
-      viewBtn +
-      '<button class="saved-card-remove" onclick="openEditForm(\'' + o.id + '\')">Edit</button>' +
-      '<button class="saved-card-remove" style="color:var(--red)" onclick="deleteRecipeLib(\'' + o.id + '\')">Delete</button>' +
+  // Actions row: stars, note, edit, delete, like
+  var actionsHtml =
+    '<div class="rc-actions" onclick="event.stopPropagation()">' +
+      '<div class="rc-stars">' + starsHtml + '</div>' +
+      '<button class="rc-action-btn' + (o.note ? ' has-note' : '') + '" onclick="editNote(\'' + o.id + '\')">\u270e Note</button>' +
+      '<button class="rc-action-btn" onclick="openEditForm(\'' + o.id + '\')">Edit</button>' +
+      '<button class="rc-action-btn" style="color:var(--red)" onclick="deleteRecipeLib(\'' + o.id + '\')">Delete</button>' +
+      '<button class="rc-save-btn' + (savedState ? ' saved' : '') + '" onclick="toggleLike(\'' + o.id + '\')">' + (savedState ? '\u2665' : '\u2661') + '</button>' +
     '</div>';
 
-  return '<div class="saved-card">' +
-    '<div class="saved-card-bar" style="background:' + o.color + '"></div>' +
-    '<div class="saved-card-body">' +
-      (catBadge ? '<div style="margin-bottom:4px;">' + catBadge + '</div>' : '') +
-      (o.sub ? '<div class="saved-card-day">' + o.sub + '</div>' : '') +
-      nameHtml +
-      (meta.length ? '<div style="font-size:11px;color:var(--muted);font-family:sans-serif;margin-top:3px;">' + meta.join('\u00b7') + '</div>' : '') +
-      (o.note ? '<div class="saved-card-note">' + o.note.substring(0,80) + (o.note.length>80?'\u2026':'') + '</div>' : '') +
-      (o.tags && o.tags.length
-        ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
-          o.tags.map(function(t){ return '<span class="pill pill-prep">' + t + '</span>'; }).join('') +
-          '</div>'
-        : '') +
-      likeRow +
-      editRow +
-    '</div></div>';
+  var inner =
+    '<div class="rc-header" style="background:' + o.color + '"></div>' +
+    '<div class="rc-body">' +
+      (o.sub ? '<div class="rc-day">' + o.sub + '</div>' : '') +
+      '<div class="rc-name">' + o.name + '</div>' +
+      descHtml + metaHtml +
+      footer +
+      actionsHtml +
+    '</div>';
+
+  return o.href
+    ? '<a class="recipe-card" href="' + o.href + '">' + inner + '</a>'
+    : '<div class="recipe-card" onclick="openDetail(\'' + o.id + '\')">' + inner + '</div>';
 }
 
 function setFilter(f, btn) {
@@ -368,6 +380,11 @@ document.addEventListener('keydown', function(e) {
 window._onNavAction = function() { renderLibrary(); };
 
 // ── Init ──────────────────────────────────────────────────────────
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var q = params.get('q');
+  if (q) { _libQ = q; document.getElementById('libSearch').value = q; }
+})();
 renderLibrary();
 </script>
 </body>

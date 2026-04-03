@@ -136,8 +136,14 @@
       if (!lunch && !dinner) {
         mealsHtml = '<span class="dash-week-meal-empty">\u2014</span>';
       } else {
-        if (lunch)  mealsHtml += '<span class="dash-week-meal">L\u00b7 ' + lunch.recipeName  + '</span>';
-        if (dinner) mealsHtml += '<span class="dash-week-meal">D\u00b7 ' + dinner.recipeName + '</span>';
+        if (lunch) {
+          var lh = slotHref(lunch);
+          mealsHtml += '<span class="dash-week-meal">L\u00b7 ' + (lh ? '<a href="' + lh + '" class="dash-meal-link">' + lunch.recipeName + '</a>' : lunch.recipeName) + '</span>';
+        }
+        if (dinner) {
+          var dh = slotHref(dinner);
+          mealsHtml += '<span class="dash-week-meal">D\u00b7 ' + (dh ? '<a href="' + dh + '" class="dash-meal-link">' + dinner.recipeName + '</a>' : dinner.recipeName) + '</span>';
+        }
       }
       weekHtml +=
         '<div class="dash-week-day' + (isToday ? ' dash-today-row' : '') + '">' +
