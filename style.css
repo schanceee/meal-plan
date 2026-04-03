@@ -859,3 +859,66 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 16px;
   font-family: 'Helvetica Neue', sans-serif;
 }
+
+/* ── Plan details — shopping row ───────────────────────────── */
+.pd-shopping-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* ── Plan details — meal prep ──────────────────────────────── */
+.pd-mealprep-content {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-family: 'Helvetica Neue', sans-serif;
+}
+.pd-mealprep-empty {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  font-family: 'Helvetica Neue', sans-serif;
+  font-style: italic;
+}
+
+/* ── Meal prep update banner ───────────────────────────────── */
+.mp-banner {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 600;
+  flex-wrap: wrap;
+  max-width: 90vw;
+}
+.mp-banner-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.mp-banner-msg {
+  font-size: 14px;
+  font-family: 'Helvetica Neue', sans-serif;
+  color: var(--text);
+}
+.mp-banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
+@media (max-width: 600px) {
+  .mp-banner { bottom: 74px; }
+  .mp-banner-msg { font-size: 13px; }
+}

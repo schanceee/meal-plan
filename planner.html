@@ -236,7 +236,7 @@ function _fmtDate(d) {
 function _fresh() {
   var slots = {};
   DAYS.forEach(function(d) { MEALS.forEach(function(m) { slots[d+'-'+m] = null; }); });
-  return { slots: slots, notes:'', createdAt: Date.now(), updatedAt: Date.now() };
+  return { slots: slots, notes:'', mealPrep:'', createdAt: Date.now(), updatedAt: Date.now() };
 }
 function _load(key) {
   try { return JSON.parse(localStorage.getItem('weekPlan_'+key)) || _fresh(); }
@@ -358,6 +358,7 @@ function _clearSlot(day, meal) {
   _plan.slots[day+'-'+meal] = null;
   _save();
   _render();
+  _maybeBannerMealPrep();
 }
 function _assign(recipeId, recipeName, tags, isNew, aiSuggestion) {
   _plan.slots[_pickerDay+'-'+_pickerMeal] = {
@@ -370,6 +371,7 @@ function _assign(recipeId, recipeName, tags, isNew, aiSuggestion) {
   _save();
   _closePicker();
   _render();
+  _maybeBannerMealPrep();
 }
 
 // ── Picker ─────────────────────────────────────────────────
@@ -733,6 +735,7 @@ function _applyAiPlan() {
   _save();
   _closeAiModal();
   _render();
+  _maybeBannerMealPrep();
 }
 
 // ── Shopping list ──────────────────────────────────────────
@@ -854,12 +857,29 @@ function _renderPlanDetails() {
   });
 
   var todayStr = new Date().toDateString();
-  var html = '<div class="pd-wrap">' +
-    '<div class="pd-header">' +
-      '<span class="pd-title">Recipes this week</span>' +
-      '<span class="pd-count">' + filled.length + ' meal' + (filled.length!==1?'s':'') + ' planned</span>' +
+  var hasKey = !!localStorage.getItem('claudeApiKey');
+
+  var html = '<div class="pd-wrap">';
+
+  // ── Shopping row ─────────────────────────────────────────
+  html += '<div class="pd-shopping-row">' +
+    '<div>' +
+      '<div class="pd-title" style="margin-bottom:4px;">Shopping</div>' +
+      '<div style="font-size:12px;font-family:sans-serif;color:var(--muted);">' +
+        filled.length + ' meal' + (filled.length!==1?'s':'') + ' \xb7 ' + _fmtRange(_weekKey) +
+      '</div>' +
     '</div>' +
-    '<div class="pd-timeline">';
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button class="btn btn-outline" style="font-size:13px;" onclick="openShoppingModal()">\uD83D\uDED2 Shopping list</button>' +
+      '<button class="btn btn-outline" style="font-size:13px;" onclick="_copyShoppingList()">\uD83D\uDCCB Copy list</button>' +
+    '</div>' +
+  '</div>';
+
+  // ── Recipe timeline ───────────────────────────────────────
+  html += '<div class="pd-header" style="margin-top:28px;">' +
+    '<span class="pd-title">Recipes this week</span>' +
+  '</div>' +
+  '<div class="pd-timeline">';
 
   DAYS.forEach(function(d, di) {
     if (!byDay[d]) return;
@@ -883,13 +903,119 @@ function _renderPlanDetails() {
     });
     html += '</div></div>';
   });
-
   html += '</div>';
+
   if (_plan.notes) {
     html += '<div class="pd-notes">' + _plan.notes + '</div>';
   }
+
+  // ── Meal prep section ─────────────────────────────────────
+  html += '<div class="pd-mealprep" id="pdMealPrep">';
+  html += '<div class="pd-header" style="margin-top:32px;margin-bottom:0;">' +
+    '<span class="pd-title">Meal prep</span>' +
+    (hasKey
+      ? '<button class="btn btn-outline" style="font-size:12px;padding:5px 12px;" onclick="_generateMealPrep()">' +
+          (_plan.mealPrep ? '\u21BB Regenerate' : '\u2728 Generate') +
+        '</button>'
+      : '<span style="font-size:12px;font-family:sans-serif;color:var(--muted);">Set API key (\u2699) to generate</span>') +
+  '</div>';
+
+  if (_plan.mealPrep) {
+    html += '<div class="pd-mealprep-content">' + _plan.mealPrep + '</div>';
+  } else {
+    html += '<div class="pd-mealprep-empty">' +
+      (hasKey
+        ? 'Click \u201cGenerate\u201d to create a Sunday meal prep guide based on your planned meals.'
+        : 'Add your Claude API key in settings (\u2699) to generate personalised meal prep instructions.') +
+    '</div>';
+  }
   html += '</div>';
+
+  html += '</div>'; // pd-wrap
   el.innerHTML = html;
+}
+
+// ── Meal prep generation ────────────────────────────────────
+function _generateMealPrep() {
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) { openApiSettings(); return; }
+
+  var filled = [];
+  DAYS.forEach(function(d, di) {
+    MEALS.forEach(function(m) {
+      var s = _plan.slots[d+'-'+m];
+      if (s) filled.push({ day: DAY_NAMES[di], meal: MEAL_LBL[m], slot: s });
+    });
+  });
+  if (!filled.length) return;
+
+  var mealLines = filled.map(function(f) {
+    var rec = f.slot.recipeId ? _recipeById(f.slot.recipeId) : null;
+    var ings = (rec && rec.ingredients) || [];
+    return f.day + ' ' + f.meal + ': ' + f.slot.recipeName +
+      (ings.length ? '\n  Ingredients: ' + ings.join(', ') : '');
+  }).join('\n\n');
+
+  var prompt = 'You are a meal prep assistant. Based on this week\'s planned meals, generate concise Sunday meal prep instructions.\n\n' +
+    'Planned meals:\n' + mealLines + '\n\n' +
+    'Write 4-7 numbered prep tasks. For each task:\n' +
+    '- Name the task and roughly how long it takes\n' +
+    '- Note which meals it serves\n' +
+    '- Give brief storage tip\n\n' +
+    'Group tasks by type (roasting, cooking grains, making sauces, etc.) for efficiency.\n' +
+    'Be specific with quantities where helpful. Keep each task to 2-3 sentences.\n' +
+    'Format as a plain numbered list. No markdown headers. No intro or outro text.';
+
+  // Show spinner
+  var el = document.getElementById('pdMealPrep');
+  if (el) {
+    var content = el.querySelector('.pd-mealprep-content, .pd-mealprep-empty');
+    if (content) content.innerHTML = '<span style="color:var(--muted);font-size:13px;font-family:sans-serif;">Generating meal prep instructions\u2026</span>';
+    var btn = el.querySelector('button');
+    if (btn) { btn.disabled = true; btn.textContent = 'Generating\u2026'; }
+  }
+
+  _claude(prompt, 1200)
+    .then(function(text) {
+      _plan.mealPrep = text.trim();
+      _save();
+      _renderPlanDetails();
+    })
+    .catch(function(err) {
+      var el = document.getElementById('pdMealPrep');
+      var content = el && el.querySelector('.pd-mealprep-content, .pd-mealprep-empty');
+      if (content) content.innerHTML = '<span style="color:#c0392b;font-size:13px;font-family:sans-serif;">Error: ' + err.message + '</span>';
+    });
+}
+
+// ── Meal prep update banner ─────────────────────────────────
+var _bannerShown = false;
+function _maybeBannerMealPrep() {
+  if (!_plan.mealPrep || _bannerShown) return;
+  if (!localStorage.getItem('claudeApiKey')) return;
+  _bannerShown = true;
+  var banner = document.createElement('div');
+  banner.id = 'mpBanner';
+  banner.className = 'mp-banner';
+  banner.innerHTML =
+    '<span class="mp-banner-msg">Plan changed \u2014 update meal prep instructions?</span>' +
+    '<div class="mp-banner-btns">' +
+      '<button class="btn btn-teal" style="font-size:12px;padding:5px 14px;" onclick="_bannerUpdate()">Update</button>' +
+      '<button class="btn btn-outline" style="font-size:12px;padding:5px 14px;" onclick="_bannerDismiss()">Keep current</button>' +
+    '</div>';
+  document.body.appendChild(banner);
+  setTimeout(function() { banner.classList.add('mp-banner-show'); }, 50);
+}
+function _bannerUpdate() {
+  _bannerDismiss();
+  _generateMealPrep();
+}
+function _bannerDismiss() {
+  _bannerShown = false;
+  var b = document.getElementById('mpBanner');
+  if (!b) return;
+  b.classList.remove('mp-banner-show');
+  setTimeout(function() { b && b.parentNode && b.parentNode.removeChild(b); }, 300);
 }
 
 // ── Keyboard ───────────────────────────────────────────────
