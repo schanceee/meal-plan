@@ -5,8 +5,8 @@
 
 // ── Supabase config — edit these when you have your credentials ──────────────
 // Get from: supabase.com → your project → Settings → API
-window.SUPABASE_URL  = 'YOUR_SUPABASE_URL';   // https://xxxx.supabase.co
-window.SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY';
+window.SUPABASE_URL  = 'https://uqdyllxyvstgeaeycsxx.supabase.co';   // https://xxxx.supabase.co
+window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
 // ─────────────────────────────────────────────────────────────────────────────
 
 (function () {
