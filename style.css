@@ -428,6 +428,16 @@ a { color: inherit; text-decoration: none; }
   .bring-box { flex-direction: column; }
   .gb-search { display: none; }
   .gb-add { font-size: 11px; padding: 0 9px; }
+  .gb-nav-link { display: none; }
+  .planner-actions { margin-left: 0 !important; width: 100%; }
+}
+
+.planner-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 /* ── WEEKLY PLANNER ───────────────────────────────────────────── */

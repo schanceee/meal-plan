@@ -24,7 +24,7 @@
       <button class="week-nav-btn" onclick="changeWeek(1)" title="Next week">&#8594;</button>
       <button class="btn btn-outline" style="padding:5px 14px;font-size:12px;font-family:sans-serif;" onclick="changeWeek(0)">This week</button>
     </div>
-    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <div class="planner-actions">
       <button class="btn btn-outline" onclick="openShoppingModal()">&#128722; Shopping list</button>
       <button class="btn btn-teal" onclick="openAiPlanModal()">&#10024; Plan with AI</button>
     </div>
@@ -210,7 +210,9 @@ function _getMondayKey(date) {
   var day = d.getDay();
   d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
   d.setHours(0,0,0,0);
-  return d.toISOString().slice(0,10);
+  // Use local date parts to avoid UTC offset shifting the date (e.g. UTC+2 users)
+  var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
+  return y + '-' + (mo < 10 ? '0' : '') + mo + '-' + (da < 10 ? '0' : '') + da;
 }
 function _weekDate(dayIndex) {
   var d = new Date(_weekKey + 'T00:00:00');

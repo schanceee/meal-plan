@@ -573,7 +573,10 @@
   window.closeModal = function (id) {
     if (id) { document.getElementById(id).style.display = 'none'; }
     if (!id || id === 'noteModal') _noteId = null;
-    if (!id || id === 'addModal') _navEditId = null;
+    if (!id || id === 'addModal') {
+      _navEditId = null;
+      window._plannerOnRecipeSaved = null;
+    }
   };
 
   // ── Save / unsave / delete ──────────────────────────────────────────────────
