@@ -383,12 +383,35 @@ function _clearSlot(day, meal) {
   _maybeBannerMealPrep();
 }
 function _assign(recipeId, recipeName, tags, isNew, aiSuggestion) {
+  var finalId = recipeId || null;
+  var finalIsNew = !!isNew;
+  var finalAiSuggestion = aiSuggestion || null;
+
+  // Auto-save AI-suggested new recipes straight to the library
+  if (isNew) {
+    var ai = aiSuggestion || {};
+    var newId = 'custom-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+    set(newId, {
+      saved: true, custom: true,
+      name: (ai.name || recipeName || '').trim(),
+      description: ai.description || '',
+      ingredients: Array.isArray(ai.ingredients) ? ai.ingredients : [],
+      instructions: Array.isArray(ai.instructions) ? ai.instructions : [],
+      tags: ai.tags || tags || [],
+      category: 'main',
+      rating: 0, note: '', createdAt: Date.now()
+    });
+    finalId = newId;
+    finalIsNew = false;
+    finalAiSuggestion = null;
+  }
+
   _plan.slots[_pickerDay+'-'+_pickerMeal] = {
-    recipeId: recipeId || null,
+    recipeId: finalId,
     recipeName: recipeName,
     tags: tags || [],
-    isNew: !!isNew,
-    aiSuggestion: aiSuggestion || null
+    isNew: finalIsNew,
+    aiSuggestion: finalAiSuggestion
   };
   _save();
   _closePicker();
@@ -749,27 +772,32 @@ function _applyAiPlan() {
   if (!_pendingAi || !_pendingAi.slots) return;
   var slots = _pendingAi.slots;
 
+  // Build map slotKey → full recipe data from newRecipes array
+  var newRecipeMap = {};
+  (_pendingAi.newRecipes || []).forEach(function(r) {
+    if (r.slotKey) newRecipeMap[r.slotKey] = r;
+  });
+
   // Auto-save new AI-suggested recipes to the library
   var seq = 0;
   Object.keys(slots).forEach(function(k) {
     var s = slots[k];
-    if (s && s.isNew && s.aiSuggestion) {
-      var ai = s.aiSuggestion;
-      var id = 'custom-' + Date.now() + '-' + (++seq);
-      set(id, {
-        saved: true, custom: true,
-        name: ai.name || s.recipeName,
-        description: ai.description || '',
-        ingredients: Array.isArray(ai.ingredients) ? ai.ingredients : [],
-        instructions: Array.isArray(ai.instructions) ? ai.instructions : [],
-        tags: ai.tags || s.tags || [],
-        category: ai.category || 'main',
-        rating: 0, note: '', createdAt: Date.now()
-      });
-      s.recipeId = id;
-      s.isNew = false;
-      s.aiSuggestion = null;
-    }
+    if (!s || !s.isNew) return;
+    var rData = newRecipeMap[k] || s.aiSuggestion || {};
+    var id = 'custom-' + Date.now() + '-' + (++seq);
+    set(id, {
+      saved: true, custom: true,
+      name: (rData.name || s.recipeName || '').trim(),
+      description: rData.description || '',
+      ingredients: Array.isArray(rData.ingredients) ? rData.ingredients : [],
+      instructions: Array.isArray(rData.instructions) ? rData.instructions : [],
+      tags: rData.tags || s.tags || [],
+      category: rData.category || 'main',
+      rating: 0, note: '', createdAt: Date.now()
+    });
+    s.recipeId = id;
+    s.isNew = false;
+    s.aiSuggestion = null;
   });
 
   Object.keys(slots).forEach(function(k) {
