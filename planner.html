@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="recipes.js"></script>
   <script src="nav.js"></script>
+  <script async src="//platform.getbring.com/widgets/import.js"></script>
 </head>
 <body>
 
@@ -34,6 +35,24 @@
     <div class="planner-grid" id="plannerGrid" style="min-width:700px;"></div>
   </div>
 
+</div>
+
+<!-- Static shopping / Bring section -->
+<div id="pdShoppingSection" style="display:none">
+  <div class="container" style="max-width:1100px;">
+    <div class="pd-wrap" style="padding-bottom:0;">
+      <div class="pd-shopping-row">
+        <div>
+          <div class="pd-title">Shopping</div>
+          <div id="pdShoppingSub" style="font-size:12px;font-family:sans-serif;color:var(--muted);margin-top:4px;"></div>
+        </div>
+        <div class="bring-buttons">
+          <div data-bring-import="" data-bring-language="en"></div>
+          <button class="btn btn-outline btn-copy-shopping" style="font-size:13px;" onclick="_copyShoppingList()">&#128203; Copy list</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="planDetails"></div>
@@ -133,7 +152,7 @@
     <div id="shoppingContent" style="margin-top:16px;"></div>
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn btn-outline" onclick="_closeShoppingModal()">Close</button>
-      <button class="btn btn-teal" onclick="_copyShoppingList()">Copy list</button>
+      <button class="btn btn-teal btn-copy-shopping" onclick="_copyShoppingList()">Copy list</button>
     </div>
   </div>
 </div>
@@ -804,9 +823,12 @@ function _copyShoppingList() {
     lines.push('');
   });
   navigator.clipboard.writeText(lines.join('\n')).then(function() {
-    var btn = document.querySelector('#shoppingModal .btn-teal');
-    btn.textContent = '\u2713 Copied!';
-    setTimeout(function(){ btn.textContent = 'Copy list'; }, 2200);
+    // Update whichever copy button triggered this
+    var btns = document.querySelectorAll('.btn-copy-shopping');
+    btns.forEach(function(b){ b.textContent = '\u2713 Copied!'; });
+    setTimeout(function(){
+      btns.forEach(function(b){ b.textContent = '\uD83D\uDCCB Copy list'; });
+    }, 2200);
   });
 }
 
@@ -835,6 +857,24 @@ function _claude(prompt, maxTokens) {
   .then(function(d) { return d.content&&d.content[0]&&d.content[0].text||''; });
 }
 
+// ── Meal prep text parser ───────────────────────────────────
+function _parseMealPrepSteps(text) {
+  var lines = text.split('\n');
+  var steps = [];
+  var current = null;
+  lines.forEach(function(line) {
+    var m = line.match(/^(\d+)[.)]\s+(.+)/);
+    if (m) {
+      if (current) steps.push(current);
+      current = { num: m[1], title: m[2], body: [] };
+    } else if (current && line.trim()) {
+      current.body.push(line.replace(/^[-*]\s*/, '').trim());
+    }
+  });
+  if (current) steps.push(current);
+  return steps;
+}
+
 // ── Plan details (below grid) ──────────────────────────────
 function _renderPlanDetails() {
   var el = document.getElementById('planDetails');
@@ -848,7 +888,16 @@ function _renderPlanDetails() {
     });
   });
 
-  if (!filled.length) { el.innerHTML = ''; return; }
+  // Show / hide static shopping section
+  var shoppingEl = document.getElementById('pdShoppingSection');
+  var subEl = document.getElementById('pdShoppingSub');
+  if (!filled.length) {
+    el.innerHTML = '';
+    if (shoppingEl) shoppingEl.style.display = 'none';
+    return;
+  }
+  if (shoppingEl) shoppingEl.style.display = '';
+  if (subEl) subEl.textContent = filled.length + ' meal' + (filled.length!==1?'s':'') + ' \xb7 ' + _fmtRange(_weekKey);
 
   var byDay = {};
   filled.forEach(function(f) {
@@ -860,20 +909,6 @@ function _renderPlanDetails() {
   var hasKey = !!localStorage.getItem('claudeApiKey');
 
   var html = '<div class="pd-wrap">';
-
-  // ── Shopping row ─────────────────────────────────────────
-  html += '<div class="pd-shopping-row">' +
-    '<div>' +
-      '<div class="pd-title" style="margin-bottom:4px;">Shopping</div>' +
-      '<div style="font-size:12px;font-family:sans-serif;color:var(--muted);">' +
-        filled.length + ' meal' + (filled.length!==1?'s':'') + ' \xb7 ' + _fmtRange(_weekKey) +
-      '</div>' +
-    '</div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-      '<button class="btn btn-outline" style="font-size:13px;" onclick="openShoppingModal()">\uD83D\uDED2 Shopping list</button>' +
-      '<button class="btn btn-outline" style="font-size:13px;" onclick="_copyShoppingList()">\uD83D\uDCCB Copy list</button>' +
-    '</div>' +
-  '</div>';
 
   // ── Recipe timeline ───────────────────────────────────────
   html += '<div class="pd-header" style="margin-top:28px;">' +
@@ -893,7 +928,7 @@ function _renderPlanDetails() {
       '<div class="pd-day-meals">';
     byDay[d].meals.forEach(function(f) {
       var rec = f.slot.recipeId ? _recipeById(f.slot.recipeId) : null;
-      var href = rec && rec.href ? rec.href : null;
+      var href = rec && rec.href ? rec.href : (f.slot.recipeId && f.slot.recipeId.indexOf('custom-') === 0 ? 'library.html' : null);
       html += '<div class="pd-meal">' +
         '<span class="pd-meal-type">' + MEAL_LBL[f.meal] + '</span>' +
         (href
@@ -912,7 +947,7 @@ function _renderPlanDetails() {
   // ── Meal prep section ─────────────────────────────────────
   html += '<div class="pd-mealprep" id="pdMealPrep">';
   html += '<div class="pd-header" style="margin-top:32px;margin-bottom:0;">' +
-    '<span class="pd-title">Meal prep</span>' +
+    '<span class="pd-title">Sunday meal prep</span>' +
     (hasKey
       ? '<button class="btn btn-outline" style="font-size:12px;padding:5px 12px;" onclick="_generateMealPrep()">' +
           (_plan.mealPrep ? '\u21BB Regenerate' : '\u2728 Generate') +
@@ -921,7 +956,25 @@ function _renderPlanDetails() {
   '</div>';
 
   if (_plan.mealPrep) {
-    html += '<div class="pd-mealprep-content">' + _plan.mealPrep + '</div>';
+    var steps = _parseMealPrepSteps(_plan.mealPrep);
+    if (steps.length) {
+      html += '<div class="mp-goal-box">Prepare the bases on Sunday so you can assemble meals in under 15\u00a0min all week. Everything keeps 4\u20135\u00a0days in the fridge.</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">';
+      steps.forEach(function(s) {
+        html += '<div class="mp-step-card">' +
+          '<div class="mp-step-header">' +
+            '<span class="mp-step-num">' + s.num + '</span>' +
+            '<strong class="mp-step-title">' + s.title + '</strong>' +
+          '</div>' +
+          (s.body.length ? '<p class="mp-step-body">' + s.body.join('<br>') + '</p>' : '') +
+        '</div>';
+      });
+      html += '</div>';
+      // Summary teal box
+      html += '<div class="mp-summary-box" style="margin-top:12px;">Everything is prepped \u2014 the whole week assembles in under 15 min per meal.</div>';
+    } else {
+      html += '<div class="pd-mealprep-content">' + _plan.mealPrep + '</div>';
+    }
   } else {
     html += '<div class="pd-mealprep-empty">' +
       (hasKey

@@ -871,6 +871,14 @@ a { color: inherit; text-decoration: none; }
   flex-wrap: wrap;
 }
 
+/* ── Plan details — Bring! shopping buttons ────────────────── */
+.bring-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 /* ── Plan details — meal prep ──────────────────────────────── */
 .pd-mealprep-content {
   margin-top: 14px;
@@ -886,6 +894,116 @@ a { color: inherit; text-decoration: none; }
   color: var(--muted);
   font-family: 'Helvetica Neue', sans-serif;
   font-style: italic;
+}
+
+/* ── Meal prep step cards (old index page style) ───────────── */
+.mp-goal-box {
+  background: var(--amber-light);
+  border: 1px solid #d4b87a;
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--amber);
+  font-family: 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+}
+.mp-step-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+.mp-step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.mp-step-num {
+  background: var(--amber);
+  color: white;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'Helvetica Neue', sans-serif;
+  flex-shrink: 0;
+}
+.mp-step-title { font-size: 14px; }
+.mp-step-body {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  font-family: 'Helvetica Neue', sans-serif;
+  margin: 0;
+}
+.mp-summary-box {
+  background: var(--teal-light);
+  border: 1px solid #b0d4cc;
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-size: 13px;
+  color: var(--teal);
+  font-family: 'Helvetica Neue', sans-serif;
+}
+
+/* ── Library card — like / rating / note ───────────────────── */
+.lib-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+.lib-like-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--muted);
+  padding: 0 4px;
+  line-height: 1;
+  transition: color .15s;
+}
+.lib-like-btn:hover,
+.lib-like-btn.active { color: #c0392b; }
+.lib-rate-stars {
+  display: flex;
+  gap: 1px;
+  align-items: center;
+}
+.lib-star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--border);
+  padding: 0 1px;
+  line-height: 1;
+  transition: color .1s;
+}
+.lib-star-btn:hover,
+.lib-star-btn.filled { color: #d4960a; }
+.lib-note-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--muted);
+  padding: 0 4px;
+  line-height: 1;
+  margin-left: auto;
+  transition: color .15s;
+}
+.lib-note-btn:hover { color: var(--teal); }
+.lib-edit-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 /* ── Meal prep update banner ───────────────────────────────── */

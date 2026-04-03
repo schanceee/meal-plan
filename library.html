@@ -25,7 +25,7 @@
     <div class="lib-filters">
       <button class="lib-filter active" onclick="setFilter('all',this)">All</button>
       <button class="lib-filter" onclick="setFilter('weekly',this)">This week</button>
-      <button class="lib-filter" onclick="setFilter('custom',this)">My recipes</button>
+      <button class="lib-filter" onclick="setFilter('saved',this)">Saved</button>
     </div>
     <div style="display:flex;gap:8px;flex-shrink:0;">
       <button class="btn btn-teal" onclick="openAddRecipe()">+ Add recipe</button>
@@ -77,27 +77,54 @@ var _libCatFilter = 'all';
 // ── Render ──────────────────────────────────────────────────────
 function renderLibrary() {
   var q = _libQ.toLowerCase().trim();
-  var allCustom = Object.entries(getAll()).map(function(e) {
-    return Object.assign({ id: e[0] }, e[1]);
-  });
 
-  var weeklyShown = _libFilter !== 'custom' ? WEEKLY.filter(function(r) {
-    if (_libCatFilter !== 'all' && r.category !== _libCatFilter) return false;
-    if (!q) return true;
-    return r.name.toLowerCase().includes(q) || (r.category||'').includes(q) ||
-           r.tags.some(function(t){ return t.includes(q); });
-  }) : [];
+  // Only truly custom recipes (user-added), not WEEKLY_DB overrides
+  var allCustom = Object.entries(getAll())
+    .filter(function(e){ return e[1] && e[1].custom; })
+    .map(function(e){ return Object.assign({ id: e[0] }, e[1]); });
 
-  var customShown = _libFilter !== 'weekly' ? allCustom.filter(function(r) {
-    if (_libCatFilter !== 'all' && (r.category || 'main') !== _libCatFilter) return false;
-    if (!q) return true;
-    var n = (r.name||'').toLowerCase();
-    var d = (r.description||'').toLowerCase();
-    var tg = (r.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
-    var ig = (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(q); });
-    var cat = (r.category||'main').toLowerCase();
-    return n.includes(q) || d.includes(q) || tg || ig || cat.includes(q);
-  }) : [];
+  // WEEKLY_DB recipes to show
+  var weeklyShown = [];
+  if (_libFilter !== 'saved') {
+    weeklyShown = WEEKLY.filter(function(r) {
+      var rec = get(r.id);
+      if (rec.hidden) return false;
+      if (_libFilter === 'weekly') {
+        if (_libCatFilter !== 'all' && (rec.category || r.category) !== _libCatFilter) return false;
+        if (!q) return true;
+        return (rec.name || r.name).toLowerCase().includes(q) || (rec.tags || r.tags).some(function(t){ return t.includes(q); });
+      }
+      // 'all' filter
+      if (_libCatFilter !== 'all' && (rec.category || r.category) !== _libCatFilter) return false;
+      if (!q) return true;
+      return (rec.name || r.name).toLowerCase().includes(q) || (rec.category || r.category || '').includes(q) ||
+             (rec.tags || r.tags).some(function(t){ return t.includes(q); });
+    });
+  } else {
+    // 'saved' filter: only WEEKLY recipes the user liked
+    weeklyShown = WEEKLY.filter(function(r) {
+      var rec = get(r.id);
+      if (rec.hidden || !rec.saved) return false;
+      if (_libCatFilter !== 'all' && (rec.category || r.category) !== _libCatFilter) return false;
+      if (!q) return true;
+      return (rec.name || r.name).toLowerCase().includes(q) || (rec.tags || r.tags).some(function(t){ return t.includes(q); });
+    });
+  }
+
+  // Custom recipes to show
+  var customShown = [];
+  if (_libFilter !== 'weekly') {
+    var baseCustom = _libFilter === 'saved' ? allCustom.filter(function(r){ return r.saved; }) : allCustom;
+    customShown = baseCustom.filter(function(r) {
+      if (_libCatFilter !== 'all' && (r.category || 'main') !== _libCatFilter) return false;
+      if (!q) return true;
+      var n = (r.name||'').toLowerCase();
+      var d = (r.description||'').toLowerCase();
+      var tg = (r.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
+      var ig = (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(q); });
+      return n.includes(q) || d.includes(q) || tg || ig;
+    });
+  }
 
   var total = weeklyShown.length + customShown.length;
   document.getElementById('libSubtitle').textContent =
@@ -116,18 +143,34 @@ function renderLibrary() {
   weeklyShown.forEach(function(r) {
     var rec = get(r.id);
     html += recipeCard({
-      id: r.id, name: r.name, sub: r.day, tags: r.tags, category: r.category,
-      rating: rec.rating, note: rec.note, color: r.color,
+      id: r.id,
+      name: rec.name || r.name,
+      sub: r.day,
+      tags: rec.tags || r.tags,
+      category: rec.category || r.category,
+      rating: rec.rating || 0,
+      note: rec.note || '',
+      saved: !!rec.saved,
+      color: r.color,
       href: 'recettes/' + r.id + '.html'
     });
   });
 
   customShown.forEach(function(r) {
     html += recipeCard({
-      id: r.id, name: r.name || 'Untitled', sub: '',
-      tags: r.tags || [], rating: r.rating, note: r.note,
-      color: 'var(--teal)', href: null, category: r.category || 'main',
-      servings: r.servings, prepTime: r.prepTime, cookTime: r.cookTime
+      id: r.id,
+      name: r.name || 'Untitled',
+      sub: '',
+      tags: r.tags || [],
+      rating: r.rating || 0,
+      note: r.note || '',
+      saved: !!r.saved,
+      color: 'var(--teal)',
+      href: null,
+      category: r.category || 'main',
+      servings: r.servings,
+      prepTime: r.prepTime,
+      cookTime: r.cookTime
     });
   });
 
@@ -136,9 +179,9 @@ function renderLibrary() {
 }
 
 function recipeCard(o) {
-  var stars = o.rating
-    ? Array.from({length:5}, function(_,i){ return i < o.rating ? '\u2605' : '\u2606'; }).join('')
-    : '';
+  var currentRating = o.rating || 0;
+  var savedState = !!o.saved;
+
   var meta = [];
   if (o.servings) meta.push(o.servings);
   if (o.prepTime) meta.push('Prep\u00a0' + o.prepTime);
@@ -148,32 +191,51 @@ function recipeCard(o) {
     ? '<a href="' + o.href + '" class="saved-card-name">' + o.name + '</a>'
     : '<div class="saved-card-name" style="cursor:pointer" onclick="openDetail(\'' + o.id + '\')">' + o.name + '</div>';
 
-  var actions = o.href ? '' :
-    '<div style="display:flex;gap:10px;margin-top:8px;">' +
-      '<button class="saved-card-remove" onclick="openDetail(\'' + o.id + '\')">View</button>' +
-      '<button class="saved-card-remove" onclick="openEditForm(\'' + o.id + '\')">Edit</button>' +
-      '<button class="saved-card-remove" style="color:var(--red)" onclick="confirmDelete(\'' + o.id + '\')">Delete</button>' +
-    '</div>';
-
   var catBadge = (o.category && o.category !== 'main')
     ? '<span class="lib-cat-badge lib-cat-' + o.category + '">' + o.category.charAt(0).toUpperCase() + o.category.slice(1) + '</span>'
     : '';
 
+  // Interactive like + star rating + note
+  var starsHtml = [1,2,3,4,5].map(function(n) {
+    return '<button class="lib-star-btn' + (n <= currentRating ? ' filled' : '') + '" onclick="setRating(\'' + o.id + '\',' + n + ')">' +
+      (n <= currentRating ? '\u2605' : '\u2606') + '</button>';
+  }).join('');
+
+  var likeRow =
+    '<div class="lib-card-actions">' +
+      '<button class="lib-like-btn' + (savedState ? ' active' : '') + '" onclick="toggleLike(\'' + o.id + '\')" title="' + (savedState ? 'Remove from saved' : 'Save recipe') + '">' +
+        (savedState ? '\u2665' : '\u2661') +
+      '</button>' +
+      '<div class="lib-rate-stars">' + starsHtml + '</div>' +
+      '<button class="lib-note-btn" onclick="editNote(\'' + o.id + '\')" title="Edit note">\u270e</button>' +
+    '</div>';
+
+  // View / Edit / Delete row — shown for all
+  var viewBtn = o.href
+    ? '<a href="' + o.href + '" class="saved-card-remove">View \u2197</a>'
+    : '<button class="saved-card-remove" onclick="openDetail(\'' + o.id + '\')">View</button>';
+  var editRow =
+    '<div class="lib-edit-row">' +
+      viewBtn +
+      '<button class="saved-card-remove" onclick="openEditForm(\'' + o.id + '\')">Edit</button>' +
+      '<button class="saved-card-remove" style="color:var(--red)" onclick="deleteRecipeLib(\'' + o.id + '\')">Delete</button>' +
+    '</div>';
+
   return '<div class="saved-card">' +
     '<div class="saved-card-bar" style="background:' + o.color + '"></div>' +
     '<div class="saved-card-body">' +
-    (catBadge ? '<div style="margin-bottom:4px;">' + catBadge + '</div>' : '') +
-    (o.sub ? '<div class="saved-card-day">' + o.sub + '</div>' : '') +
-    nameHtml +
-    (stars ? '<div class="saved-card-stars">' + stars + '</div>' : '') +
-    (meta.length ? '<div style="font-size:11px;color:var(--muted);font-family:sans-serif;margin-top:3px;">' + meta.join('\u00b7') + '</div>' : '') +
-    (o.note ? '<div class="saved-card-note">' + o.note.substring(0,80) + (o.note.length>80?'\u2026':'') + '</div>' : '') +
-    (o.tags && o.tags.length
-      ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
-        o.tags.map(function(t){ return '<span class="pill pill-prep">' + t + '</span>'; }).join('') +
-        '</div>'
-      : '') +
-    actions +
+      (catBadge ? '<div style="margin-bottom:4px;">' + catBadge + '</div>' : '') +
+      (o.sub ? '<div class="saved-card-day">' + o.sub + '</div>' : '') +
+      nameHtml +
+      (meta.length ? '<div style="font-size:11px;color:var(--muted);font-family:sans-serif;margin-top:3px;">' + meta.join('\u00b7') + '</div>' : '') +
+      (o.note ? '<div class="saved-card-note">' + o.note.substring(0,80) + (o.note.length>80?'\u2026':'') + '</div>' : '') +
+      (o.tags && o.tags.length
+        ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">' +
+          o.tags.map(function(t){ return '<span class="pill pill-prep">' + t + '</span>'; }).join('') +
+          '</div>'
+        : '') +
+      likeRow +
+      editRow +
     '</div></div>';
 }
 
@@ -247,16 +309,53 @@ function closeDetail() {
   document.getElementById('detailModal').style.display = 'none';
 }
 
-function confirmDelete(id) {
-  var r = get(id);
-  if (confirm('Delete "' + (r.name || 'this recipe') + '"? This cannot be undone.')) {
-    remove(id);
+function toggleLike(id) {
+  var rec = get(id);
+  set(id, { saved: !rec.saved });
+  window._updateGlobalBar && window._updateGlobalBar();
+  renderLibrary();
+}
+
+function setRating(id, n) {
+  var rec = get(id);
+  set(id, { rating: rec.rating === n ? 0 : n });
+  renderLibrary();
+}
+
+function editNote(id) {
+  var rec = get(id);
+  var current = rec.note || '';
+  var newNote = prompt('Note for this recipe:', current);
+  if (newNote !== null) {
+    set(id, { note: newNote });
+    renderLibrary();
+  }
+}
+
+function deleteRecipeLib(id) {
+  var w = WEEKLY.find(function(w){ return w.id === id; });
+  var name = w ? (get(id).name || w.name) : (get(id).name || 'this recipe');
+  if (confirm('Delete "' + name.substring(0,70) + '"? This cannot be undone.')) {
+    if (w) {
+      // Built-in recipe: mark hidden in localStorage
+      set(id, { hidden: true });
+    } else {
+      remove(id);
+    }
     window._updateGlobalBar && window._updateGlobalBar();
     renderLibrary();
   }
 }
 
 function openEditForm(id) {
+  var w = WEEKLY.find(function(w){ return w.id === id; });
+  if (w) {
+    // Pre-populate localStorage with WEEKLY defaults if not yet overridden
+    var existing = get(id);
+    if (!existing.name) {
+      set(id, { name: w.name, category: w.category || 'main', tags: w.tags || [] });
+    }
+  }
   openEditRecipe(id);
 }
 
