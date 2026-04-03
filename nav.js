@@ -73,8 +73,22 @@
       '<div id="addModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'addModal\')">' +
         '<div class="modal-box" style="max-width:640px;max-height:92vh;overflow-y:auto;">' +
           '<div class="modal-label" id="addModalLabel">Add recipe</div>' +
-          '<p style="font-size:13px;color:var(--muted);font-family:sans-serif;margin-top:4px;line-height:1.5;">Paste any recipe text below to auto-fill the fields \u2014 or skip to fill in manually.</p>' +
-          '<textarea id="addPasteArea" rows="4" placeholder="Paste recipe text here to auto-parse\u2026" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);resize:vertical;margin-top:8px;box-sizing:border-box;"></textarea>' +
+          // ── URL import
+          '<div style="display:flex;gap:8px;margin-top:10px;">' +
+            '<input id="addUrlInput" type="url" placeholder="Paste a recipe URL to import automatically\u2026" ' +
+              'style="flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 12px;' +
+              'font-family:Georgia,serif;font-size:14px;color:var(--text);min-width:0;box-sizing:border-box;">' +
+            '<button id="addFetchBtn" class="btn btn-teal" onclick="_navFetchUrl()">Fetch</button>' +
+          '</div>' +
+          // ── Divider
+          '<div style="display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;' +
+            'color:var(--muted);font-family:sans-serif;letter-spacing:.06em;text-transform:uppercase;">' +
+            '<div style="flex:1;height:1px;background:var(--border);"></div>' +
+            'or paste text' +
+            '<div style="flex:1;height:1px;background:var(--border);"></div>' +
+          '</div>' +
+          // ── Text paste area
+          '<textarea id="addPasteArea" rows="3" placeholder="Paste recipe text here to auto-parse\u2026" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);resize:vertical;box-sizing:border-box;"></textarea>' +
           '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">' +
             '<button id="addParseBtn" class="btn btn-teal" onclick="_navRunAiParse()">\u2728 Parse with AI</button>' +
             '<button onclick="_navRunHeuristic()" style="background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;font-family:sans-serif;text-decoration:underline;padding:0;">Parse without AI</button>' +
@@ -219,11 +233,12 @@
   window.openAddRecipe = function () {
     _navEditId = null;
     document.getElementById('addModalLabel').textContent = 'Add recipe';
+    document.getElementById('addUrlInput').value = '';
     document.getElementById('addPasteArea').value = '';
     document.getElementById('addParseErr').style.display = 'none';
     _navFillForm('', '', '', '', '', '', '', '');
     document.getElementById('addModal').style.display = 'flex';
-    setTimeout(function () { document.getElementById('addPasteArea').focus(); }, 80);
+    setTimeout(function () { document.getElementById('addUrlInput').focus(); }, 80);
   };
 
   window.openEditRecipe = function (id) {
@@ -390,6 +405,136 @@
     var el = document.getElementById('addParseErr');
     el.textContent = msg;
     el.style.display = 'block';
+  }
+
+  // ── URL import ──────────────────────────────────────────────────────────────
+
+  window._navFetchUrl = function () {
+    var raw = document.getElementById('addUrlInput').value.trim();
+    if (!raw) { _navShowParseErr('Please enter a URL.'); return; }
+    if (!/^https?:\/\//i.test(raw)) raw = 'https://' + raw;
+
+    var btn = document.getElementById('addFetchBtn');
+    btn.textContent = 'Fetching\u2026'; btn.disabled = true;
+    document.getElementById('addParseErr').style.display = 'none';
+
+    fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(raw))
+    .then(function (res) {
+      if (!res.ok) throw new Error('Proxy error ' + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      var html = data.contents || '';
+      if (!html) throw new Error('Empty page returned');
+
+      // 1. Try structured JSON-LD (schema.org/Recipe) — no AI needed
+      var structured = _navParseJsonLd(html);
+      if (structured) {
+        _navApplyParsed(structured);
+        return;
+      }
+
+      // 2. Fall back: strip HTML, put in paste area, trigger AI parse
+      var text = _navStripHtml(html).slice(0, 10000);
+      document.getElementById('addPasteArea').value = text;
+      var key = localStorage.getItem('claudeApiKey');
+      if (key) {
+        _navRunAiParse();
+      } else {
+        _navShowParseErr('No schema.org data found on this page. Paste your API key (\u2699) and click \u2728 Parse with AI, or edit the fields manually.');
+      }
+    })
+    .catch(function (err) {
+      _navShowParseErr('Could not fetch the page (' + err.message + '). Try pasting the recipe text instead.');
+    })
+    .finally(function () {
+      btn.textContent = 'Fetch'; btn.disabled = false;
+    });
+  };
+
+  // Parse schema.org Recipe from JSON-LD blocks in raw HTML
+  function _navParseJsonLd(html) {
+    var re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    var m;
+    while ((m = re.exec(html)) !== null) {
+      try {
+        var data = JSON.parse(m[1]);
+        // Handle @graph arrays
+        var items = data['@graph'] ? data['@graph'] : (Array.isArray(data) ? data : [data]);
+        for (var i = 0; i < items.length; i++) {
+          var r = _navExtractRecipe(items[i]);
+          if (r) return r;
+        }
+      } catch (e) { /* malformed JSON — skip */ }
+    }
+    return null;
+  }
+
+  function _navExtractRecipe(d) {
+    if (!d) return null;
+    var type = d['@type'];
+    if (Array.isArray(type)) type = type[0];
+    if (type !== 'Recipe') return null;
+
+    function txt(v) {
+      if (!v) return '';
+      if (typeof v === 'string') return v.replace(/<[^>]+>/g, '').trim();
+      if (v.text) return txt(v.text);
+      if (Array.isArray(v)) return v.map(txt).filter(Boolean).join('. ');
+      return '';
+    }
+
+    // Instructions: handle HowToStep, HowToSection, plain string
+    var steps = [];
+    (function collectSteps(node) {
+      if (!node) return;
+      if (typeof node === 'string') { var s = node.replace(/<[^>]+>/g,'').trim(); if (s) steps.push(s); return; }
+      if (node.text) { steps.push(node.text.replace(/<[^>]+>/g,'').trim()); return; }
+      if (node.itemListElement) node.itemListElement.forEach(collectSteps);
+      if (Array.isArray(node)) node.forEach(collectSteps);
+    })(d.recipeInstructions);
+
+    function parseDur(s) {
+      if (!s) return '';
+      var mm = s.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+      if (!mm) return s;
+      var h = parseInt(mm[1] || 0), min = parseInt(mm[2] || 0);
+      return (h ? h + 'h ' : '') + (min ? min + ' min' : '') || s;
+    }
+
+    var tags = [];
+    if (d.recipeCuisine) tags.push(Array.isArray(d.recipeCuisine) ? d.recipeCuisine[0] : d.recipeCuisine);
+    if (d.recipeCategory) tags.push(Array.isArray(d.recipeCategory) ? d.recipeCategory[0] : d.recipeCategory);
+    if (d.keywords) {
+      var kw = typeof d.keywords === 'string' ? d.keywords.split(',') : (Array.isArray(d.keywords) ? d.keywords : []);
+      kw.slice(0, 4).forEach(function (k) { tags.push(k.trim()); });
+    }
+    tags = tags.filter(Boolean).map(function(t){ return t.toLowerCase(); });
+    // dedupe
+    tags = tags.filter(function(t,i){ return tags.indexOf(t)===i; }).slice(0,6);
+
+    var yield_ = d.recipeYield;
+    var servings = Array.isArray(yield_) ? yield_[0] : (yield_ || '');
+
+    return {
+      title:       d.name       || '',
+      description: txt(d.description),
+      servings:    servings + '',
+      prepTime:    parseDur(d.prepTime),
+      cookTime:    parseDur(d.cookTime || d.totalTime),
+      ingredients: (d.recipeIngredient || []).map(function(i){ return txt(i); }).filter(Boolean),
+      instructions: steps,
+      tags:         tags
+    };
+  }
+
+  function _navStripHtml(html) {
+    return html
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&#\d+;/g, ' ')
+      .replace(/\s+/g, ' ').trim();
   }
 
   // ── API key settings ────────────────────────────────────────────────────────
