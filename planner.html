@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Planner</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="recipes.js"></script>
+  <script src="nav.js"></script>
+</head>
+<body>
+
+<div class="saved-page-hero">
+  <h1>Weekly Planner</h1>
+  <p class="saved-page-sub" id="plannerSub">&nbsp;</p>
+</div>
+
+<div class="container" style="max-width:1100px;">
+
+  <div class="planner-toolbar">
+    <div class="week-nav">
+      <button class="week-nav-btn" onclick="changeWeek(-1)" title="Previous week">&#8592;</button>
+      <span class="week-label" id="weekLabel">—</span>
+      <button class="week-nav-btn" onclick="changeWeek(1)" title="Next week">&#8594;</button>
+      <button class="btn btn-outline" style="padding:5px 14px;font-size:12px;font-family:sans-serif;" onclick="changeWeek(0)">This week</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-outline" onclick="openShoppingModal()">&#128722; Shopping list</button>
+      <button class="btn btn-teal" onclick="openAiPlanModal()">&#10024; Plan with AI</button>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <div class="planner-grid" id="plannerGrid" style="min-width:700px;"></div>
+  </div>
+
+</div>
+
+<!-- ── Slot picker modal ──────────────────────────────────── -->
+<div id="pickerModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)_closePicker()">
+  <div class="modal-box" style="max-width:540px;max-height:88vh;overflow-y:auto;">
+    <div class="modal-label" id="pickerTitle">Choose a recipe</div>
+    <input id="pickerSearch" type="search" placeholder="Search by name, ingredient, tag&hellip;"
+      oninput="renderPickerResults(this.value)"
+      style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;
+             font-family:Georgia,serif;font-size:14px;color:var(--text);margin-top:10px;box-sizing:border-box;">
+    <div id="pickerResults" style="margin-top:10px;"></div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button class="btn btn-outline" onclick="_closePicker()">Cancel</button>
+      <button id="pickerAiBtn" class="btn btn-teal" onclick="_aiSlotSuggest()">&#10024; AI suggest for this slot</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AI plan modal ──────────────────────────────────────── -->
+<div id="aiPlanModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)_closeAiModal()">
+  <div class="modal-box" style="max-width:680px;max-height:94vh;overflow-y:auto;">
+
+    <!-- Step 1: preferences -->
+    <div id="aiFormStep">
+      <div class="modal-label">Plan this week with AI</div>
+      <p style="font-size:13px;color:var(--muted);font-family:sans-serif;margin-top:4px;line-height:1.5;">
+        Claude will suggest meals based on your library, your ratings, shelf life, and what&rsquo;s seasonal right now.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:14px;margin-top:16px;">
+
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <div class="modal-label" style="margin-bottom:4px;">People</div>
+            <input id="aiPeople" type="number" value="2" min="1" max="20"
+              style="width:68px;border:1px solid var(--border);border-radius:8px;padding:7px 10px;
+                     font-family:Georgia,serif;font-size:14px;color:var(--text);">
+          </div>
+          <div>
+            <div class="modal-label" style="margin-bottom:4px;">Recipe source</div>
+            <select id="aiSource"
+              style="border:1px solid var(--border);border-radius:8px;padding:7px 10px;
+                     font-family:Georgia,serif;font-size:14px;color:var(--text);">
+              <option value="mix">Mix: my library + new ideas</option>
+              <option value="library">My library only</option>
+              <option value="new">Mostly new recipes</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <div class="modal-label" style="margin-bottom:6px;">Days I&rsquo;m not cooking</div>
+          <div id="aiSkipDays" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+
+        <div>
+          <div class="modal-label" style="margin-bottom:4px;">Notes &amp; preferences</div>
+          <input id="aiPrefs" type="text"
+            placeholder="e.g. something light, no fish this week, try a Japanese dish&hellip;"
+            style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;
+                   font-family:Georgia,serif;font-size:14px;color:var(--text);box-sizing:border-box;">
+        </div>
+
+      </div>
+      <div id="aiPlanErr" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;margin-top:10px;"></div>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="_closeAiModal()">Cancel</button>
+        <button id="aiGenerateBtn" class="btn btn-teal" onclick="_runAiPlan()">&#10024; Generate plan</button>
+      </div>
+    </div>
+
+    <!-- Step 2: preview -->
+    <div id="aiPreviewStep" style="display:none;">
+      <div class="modal-label">Suggested plan &mdash; review &amp; apply</div>
+      <p id="aiPreviewNotes" style="font-size:13px;color:var(--muted);font-family:sans-serif;
+         margin-top:6px;line-height:1.6;font-style:italic;"></p>
+      <div id="aiPreviewGrid" style="margin-top:16px;overflow-x:auto;"></div>
+      <div id="aiNewSection" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+        <div class="modal-label" style="margin-bottom:8px;">New recipes suggested &mdash; save to library?</div>
+        <div id="aiNewList"></div>
+      </div>
+      <div class="modal-actions" style="margin-top:16px;">
+        <button class="btn btn-outline" onclick="_backToAiForm()">&#8592; Adjust</button>
+        <button class="btn btn-teal" onclick="_applyAiPlan()">Apply this plan</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Shopping list modal ───────────────────────────────── -->
+<div id="shoppingModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)_closeShoppingModal()">
+  <div class="modal-box" style="max-width:580px;max-height:92vh;overflow-y:auto;">
+    <div class="modal-label">Shopping list</div>
+    <p id="shoppingSub" style="font-size:13px;color:var(--muted);font-family:sans-serif;margin-top:4px;"></p>
+    <div id="shoppingContent" style="margin-top:16px;"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn btn-outline" onclick="_closeShoppingModal()">Close</button>
+      <button class="btn btn-teal" onclick="_copyShoppingList()">Copy list</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Recipe database with ingredients + shelf-life ──────────
+var WEEKLY_DB = [
+  { id:'pasta-miso',
+    name:'Pasta \xb7 caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',
+    tags:['vegetarian','miso'], shelfLife:'any', href:'recettes/pasta-miso.html',
+    ingredients:['500g pasta (rigatoni or tagliatelle)','8 large yellow onions','2 tbsp white miso','150g Gruy\xe8re, grated','20 fresh sage leaves','4 tbsp olive oil','50g butter','Salt, black pepper'] },
+  { id:'bol-cereales',
+    name:'Grain bowl \xb7 roasted veg \xb7 lentils \xb7 tahini-tamari',
+    tags:['vegetarian','tamari'], shelfLife:'any', href:'recettes/bol-cereales.html',
+    ingredients:['200g farro or quinoa','200g green lentils','2 zucchini','1 bell pepper','2 carrots','3 tbsp tahini','2 tbsp tamari','1 lemon','Olive oil, salt, pepper'] },
+  { id:'poulet-chou-savoie',
+    name:'Braised chicken \xb7 Savoy cabbage \xb7 mustard',
+    tags:['meat','chicken'], shelfLife:'early', href:'recettes/poulet-chou-savoie.html',
+    ingredients:['1.2kg chicken thighs','1 Savoy cabbage','3 tbsp Dijon mustard','200ml cr\xe8me fra\xeeche','4 garlic cloves','Thyme sprigs','100ml white wine','Olive oil, salt'] },
+  { id:'dal-lentilles',
+    name:'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',
+    tags:['vegetarian','kefir'], shelfLife:'any', href:'recettes/dal-lentilles.html',
+    ingredients:['300g red lentils','300g basmati rice','2 tsp cumin seeds','1 tsp turmeric','1 tbsp fresh ginger','4 garlic cloves','200ml kefir','Fresh coriander','50g butter'] },
+  { id:'perche-lac',
+    name:'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',
+    tags:['fish'], shelfLife:'first2', href:'recettes/perche-lac.html',
+    ingredients:['600g lake perch fillets','Wild garlic or 3 garlic cloves','100g butter','200g baby spinach','600g potatoes','1 lemon','Olive oil, salt, pepper'] },
+  { id:'salade-betteraves',
+    name:'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese',
+    tags:['vegetarian'], shelfLife:'any', href:'recettes/salade-betteraves.html',
+    ingredients:['4 medium beets','150g Puy lentils','150g farro','150g goat cheese','3 tbsp balsamic vinegar','50g walnuts','Arugula','Olive oil, salt'] },
+  { id:'shakshuka',
+    name:'Spiced Shakshuka \xb7 roasted peppers \xb7 feta',
+    tags:['vegetarian'], shelfLife:'any', href:'recettes/shakshuka.html',
+    ingredients:['6 eggs','3 bell peppers','400g canned tomatoes','150g feta','2 tsp cumin','1 tsp smoked paprika','4 garlic cloves','Olive oil, coriander'] },
+  { id:'tarte-poireaux',
+    name:'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',
+    tags:['vegetarian'], shelfLife:'any', href:'recettes/tarte-poireaux.html',
+    ingredients:['1 sheet puff pastry','3 large leeks','150g Gruy\xe8re, grated','200g cr\xe8me fra\xeeche','2 eggs','30g butter','Thyme, nutmeg, salt'] },
+  { id:'veloute-choufleur',
+    name:'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast',
+    tags:['vegetarian','miso'], shelfLife:'any', href:'recettes/veloute-choufleur.html',
+    ingredients:['1 large cauliflower','2 tbsp white miso','50g hazelnuts','150g goat cheese','4 slices sourdough','200ml cr\xe8me fra\xeeche','2 garlic cloves','Olive oil'] },
+  { id:'soupe-miso',
+    name:'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',
+    tags:['vegetarian','miso'], shelfLife:'any', href:'recettes/soupe-miso.html',
+    ingredients:['4 tbsp white miso','2 leeks','15g dried wakame','300g silken tofu','1L dashi or water','Sesame oil, green onion'] },
+  { id:'salade-mache',
+    name:"Lamb's lettuce \xb7 radishes \xb7 cider-mustard dressing",
+    tags:['vegetarian'], shelfLife:'first3', href:'recettes/salade-mache.html',
+    ingredients:["150g lamb's lettuce",'1 bunch radishes','2 tbsp apple cider vinegar','1 tsp Dijon mustard','4 tbsp olive oil','Salt, pepper'] },
+  { id:'potage-carotte',
+    name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',
+    tags:['vegetarian'], shelfLife:'any', href:'recettes/potage-carotte.html',
+    ingredients:['800g carrots','40g fresh ginger','400ml coconut milk','1 onion','3 garlic cloves','Fresh coriander','Olive oil, salt'] }
+];
+
+// ── Constants ──────────────────────────────────────────────
+var DAYS      = ['mon','tue','wed','thu','fri','sat','sun'];
+var DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+var DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var MEALS     = ['lunch','dinner'];
+var MEAL_LBL  = { lunch:'Lunch', dinner:'Dinner' };
+
+// ── State ──────────────────────────────────────────────────
+var _weekKey      = _getMondayKey(new Date());
+var _plan         = null;
+var _pickerDay    = null;
+var _pickerMeal   = null;
+var _pickerItems  = [];   // flat array for indexed onclick
+var _pendingAi    = null;
+
+// ── Date helpers ───────────────────────────────────────────
+function _getMondayKey(date) {
+  var d = new Date(date);
+  var day = d.getDay();
+  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function _weekDate(dayIndex) {
+  var d = new Date(_weekKey + 'T00:00:00');
+  d.setDate(d.getDate() + dayIndex);
+  return d;
+}
+function _fmtRange(key) {
+  var s = new Date(key + 'T00:00:00');
+  var e = new Date(s); e.setDate(e.getDate() + 6);
+  var o = { month:'short', day:'numeric' };
+  return s.toLocaleDateString('en-US', o) + ' \u2013 ' +
+         e.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function _fmtDate(d) {
+  return d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+}
+
+// ── Plan storage ───────────────────────────────────────────
+function _fresh() {
+  var slots = {};
+  DAYS.forEach(function(d) { MEALS.forEach(function(m) { slots[d+'-'+m] = null; }); });
+  return { slots: slots, notes:'', createdAt: Date.now(), updatedAt: Date.now() };
+}
+function _load(key) {
+  try { return JSON.parse(localStorage.getItem('weekPlan_'+key)) || _fresh(); }
+  catch(e) { return _fresh(); }
+}
+function _save() {
+  _plan.updatedAt = Date.now();
+  localStorage.setItem('weekPlan_'+_weekKey, JSON.stringify(_plan));
+}
+function _pastPlans(n) {
+  var keys = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k && k.startsWith('weekPlan_')) keys.push(k.replace('weekPlan_',''));
+  }
+  return keys.sort().reverse().filter(function(k){ return k !== _weekKey; }).slice(0,n).map(function(k) {
+    try { return { key:k, plan: JSON.parse(localStorage.getItem('weekPlan_'+k)) }; }
+    catch(e) { return null; }
+  }).filter(Boolean);
+}
+
+// ── Library helpers ────────────────────────────────────────
+function _recipeById(id) {
+  if (!id) return null;
+  var w = WEEKLY_DB.filter(function(r){ return r.id === id; })[0];
+  if (w) return w;
+  var c = get(id);
+  if (c && c.name) return Object.assign({ id:id, tags:[], ingredients:[], href:null, shelfLife:'any' }, c);
+  return null;
+}
+function _allRecipes() {
+  var list = WEEKLY_DB.map(function(r) {
+    var m = get(r.id) || {};
+    return Object.assign({}, r, { rating: m.rating||0, note: m.note||'' });
+  });
+  var custom = getAll();
+  Object.keys(custom).forEach(function(id) {
+    var r = custom[id];
+    if (r && r.name) list.push(Object.assign({
+      id:id, tags:[], ingredients:[], href:null, shelfLife:'any'
+    }, r, { rating: r.rating||0 }));
+  });
+  return list;
+}
+
+// ── Navigation ─────────────────────────────────────────────
+function changeWeek(dir) {
+  if (dir === 0) {
+    _weekKey = _getMondayKey(new Date());
+  } else {
+    var d = new Date(_weekKey + 'T00:00:00');
+    d.setDate(d.getDate() + dir * 7);
+    _weekKey = _getMondayKey(d);
+  }
+  _plan = _load(_weekKey);
+  _render();
+}
+
+// ── Render ─────────────────────────────────────────────────
+function _render() {
+  var label = _fmtRange(_weekKey);
+  document.getElementById('weekLabel').textContent = label;
+  document.getElementById('plannerSub').textContent = label;
+
+  var todayStr = new Date().toDateString();
+  var html = '';
+
+  // Header row: empty corner + 7 day columns
+  html += '<div class="pg-corner"></div>';
+  DAYS.forEach(function(d, di) {
+    var date = _weekDate(di);
+    var isToday = date.toDateString() === todayStr;
+    html += '<div class="pg-col-hdr' + (isToday ? ' today' : '') + '">' +
+      DAY_SHORT[di] + '<br><span class="pg-day-num">' + date.getDate() + '</span>' +
+    '</div>';
+  });
+
+  // Lunch row + Dinner row
+  MEALS.forEach(function(meal) {
+    html += '<div class="pg-row-lbl">' + MEAL_LBL[meal] + '</div>';
+    DAYS.forEach(function(day) {
+      html += _renderSlot(day, meal, _plan.slots[day+'-'+meal]);
+    });
+  });
+
+  document.getElementById('plannerGrid').innerHTML = html;
+}
+
+function _renderSlot(day, meal, data) {
+  if (!data) {
+    return '<div class="pg-slot pg-slot-empty" onclick="_openPicker(\'' + day + '\',\'' + meal + '\')">' +
+      '<span class="pg-add-icon">+</span>' +
+    '</div>';
+  }
+  var tags = (data.tags || []).slice(0,2);
+  var tagsHtml = tags.map(function(t) {
+    var cls = 'pg-tag' + (t==='fish' ? ' pg-tag-fish' : t==='meat'||t==='chicken' ? ' pg-tag-meat' : '');
+    return '<span class="' + cls + '">' + t + '</span>';
+  }).join('');
+  var meta = get(data.recipeId || '') || {};
+  var stars = meta.rating ? '\u2605'.repeat(meta.rating) : '';
+
+  return '<div class="pg-slot pg-slot-filled' + (data.isNew ? ' pg-slot-new' : '') + '" ' +
+    'onclick="_openPicker(\'' + day + '\',\'' + meal + '\')">' +
+    '<button class="pg-clear" onclick="event.stopPropagation();_clearSlot(\'' + day + '\',\'' + meal + '\')" title="Remove">\xd7</button>' +
+    '<div class="pg-slot-name">' + (data.recipeName || '') + '</div>' +
+    (stars ? '<div style="color:#d4960a;font-size:10px;margin-top:2px;">' + stars + '</div>' : '') +
+    (tagsHtml || data.isNew ? '<div class="pg-slot-tags">' + tagsHtml + (data.isNew ? '<span class="pg-tag pg-tag-new">new</span>' : '') + '</div>' : '') +
+    (data.isNew && data.aiSuggestion
+      ? '<button class="pg-save-new" onclick="event.stopPropagation();_saveNewSlot(\'' + day + '\',\'' + meal + '\')">+ Save to library</button>'
+      : '') +
+  '</div>';
+}
+
+// ── Slot actions ───────────────────────────────────────────
+function _clearSlot(day, meal) {
+  _plan.slots[day+'-'+meal] = null;
+  _save();
+  _render();
+}
+function _assign(recipeId, recipeName, tags, isNew, aiSuggestion) {
+  _plan.slots[_pickerDay+'-'+_pickerMeal] = {
+    recipeId: recipeId || null,
+    recipeName: recipeName,
+    tags: tags || [],
+    isNew: !!isNew,
+    aiSuggestion: aiSuggestion || null
+  };
+  _save();
+  _closePicker();
+  _render();
+}
+
+// ── Picker ─────────────────────────────────────────────────
+function _openPicker(day, meal) {
+  _pickerDay = day; _pickerMeal = meal;
+  var di = DAYS.indexOf(day);
+  document.getElementById('pickerTitle').textContent = DAY_NAMES[di] + ' \xb7 ' + MEAL_LBL[meal];
+  document.getElementById('pickerSearch').value = '';
+  renderPickerResults('');
+  document.getElementById('pickerModal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('pickerSearch').focus(); }, 80);
+}
+function _closePicker() {
+  document.getElementById('pickerModal').style.display = 'none';
+  _pickerDay = null; _pickerMeal = null; _pickerItems = [];
+}
+function renderPickerResults(q) {
+  var query = q.toLowerCase().trim();
+  var all = _allRecipes();
+  var filtered = query ? all.filter(function(r) {
+    return (r.name||'').toLowerCase().includes(query) ||
+           (r.tags||[]).some(function(t){ return t.toLowerCase().includes(query); }) ||
+           (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(query); });
+  }) : all;
+  filtered.sort(function(a,b){ return (b.rating||0)-(a.rating||0); });
+  _pickerItems = filtered.slice(0,30);
+  _renderPickerItems(_pickerItems, 'pickerResults', false);
+}
+function _renderPickerItems(items, containerId, isAi) {
+  if (!items.length) {
+    document.getElementById(containerId).innerHTML =
+      '<p style="color:var(--muted);font-size:13px;font-family:sans-serif;padding:8px 0;">No recipes found.</p>';
+    return;
+  }
+  var html = items.map(function(r, i) {
+    var idx = isAi ? (_pickerItems.length - items.length + i) : i;
+    var stars = r.rating ? '\u2605'.repeat(r.rating) : '';
+    var tags = (r.tags||[]).slice(0,3).map(function(t){
+      return '<span class="pill pill-prep" style="font-size:10px;padding:2px 5px;">' + t + '</span>';
+    }).join('');
+    return '<div class="picker-item" onclick="_pickByIdx(' + idx + ')">' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div class="picker-item-name">' + (r.name||'') +
+          (r.isNew ? ' <span style="color:var(--teal);font-size:10px;font-family:sans-serif;">\u2605\u00a0new</span>' : '') +
+        '</div>' +
+        (r.reason ? '<div style="font-size:11px;color:var(--muted);font-family:sans-serif;margin-top:1px;">' + r.reason + '</div>' : '') +
+      '</div>' +
+      '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;">' +
+        (stars ? '<span style="color:#d4960a;font-size:11px;">' + stars + '</span>' : '') +
+        tags +
+      '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById(containerId).innerHTML = html;
+}
+function _pickByIdx(idx) {
+  var r = _pickerItems[idx];
+  if (!r) return;
+  _assign(r.id||null, r.name, r.tags||[], r.isNew||false, r.aiSuggestion||null);
+}
+
+// ── AI single-slot suggestion ──────────────────────────────
+function _aiSlotSuggest() {
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) { openApiSettings(); return; }
+
+  var di = DAYS.indexOf(_pickerDay);
+  var date = _weekDate(di);
+  var dayStr = DAY_NAMES[di] + ' ' + date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+  // What's already planned this week (context)
+  var planned = DAYS.map(function(d,i) {
+    return MEALS.map(function(m) {
+      var s = _plan.slots[d+'-'+m];
+      return s ? (DAY_SHORT[i]+' '+m+': '+s.recipeName) : null;
+    }).filter(Boolean);
+  }).reduce(function(a,b){ return a.concat(b); }, []).join(', ') || 'nothing yet';
+
+  var libLines = _allRecipes().map(function(r) {
+    return '- [' + (r.id||'?') + '] ' + r.name + (r.rating ? ' ['+r.rating+'\u2605]' : '') +
+      (r.tags&&r.tags.length ? ' #'+r.tags.join(' #') : '') +
+      (r.shelfLife==='first2' ? ' [FISH: Mon/Tue only]' : '') +
+      (r.shelfLife==='first3' ? ' [leafy greens: Mon-Wed only]' : '');
+  }).join('\n');
+
+  var prompt = 'Suggest 5 recipes for ' + dayStr + ' ' + _pickerMeal + '.\n\n' +
+    'Already planned this week: ' + planned + '\n\n' +
+    'My recipe library:\n' + libLines + '\n\n' +
+    'Rules:\n- Fish: Mon/Tue only\n- Leafy greens: Mon-Wed only\n' +
+    '- No repeats from this week\n- Prefer highly rated library recipes\n' +
+    '- For new recipes: mark isNew:true, id:null\n\n' +
+    'Return ONLY a JSON array:\n' +
+    '[{"id":"library-id-or-null","name":"...","tags":["..."],"reason":"one line","isNew":false}]';
+
+  var btn = document.getElementById('pickerAiBtn');
+  btn.textContent = 'Thinking\u2026'; btn.disabled = true;
+
+  _claude(prompt, 800)
+  .then(function(text) {
+    var s = text.indexOf('['), e = text.lastIndexOf(']');
+    var suggestions = JSON.parse(text.slice(s, e+1));
+    // Append to _pickerItems so _pickByIdx works
+    var startIdx = _pickerItems.length;
+    suggestions.forEach(function(s) {
+      _pickerItems.push({
+        id: s.id||null, name: s.name, tags: s.tags||[],
+        rating: 0, isNew: s.isNew||false, reason: s.reason||'',
+        aiSuggestion: s.isNew ? { name:s.name, description:s.reason||'', ingredients:[], instructions:[], tags:s.tags||[] } : null
+      });
+    });
+    // Render appended section
+    var sep = '<div style="border-top:1px solid var(--border);margin:12px 0 8px;font-size:11px;' +
+      'font-family:sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;' +
+      'color:var(--muted);padding-top:8px;">AI suggestions</div>';
+    document.getElementById('pickerResults').insertAdjacentHTML('beforeend', sep);
+    var tmp = document.createElement('div');
+    tmp.id = 'aiSuggestResults';
+    document.getElementById('pickerResults').appendChild(tmp);
+    _renderPickerItems(_pickerItems.slice(startIdx), 'aiSuggestResults', true);
+  })
+  .catch(function(err) { alert('AI error: ' + err.message); })
+  .finally(function() { btn.textContent = '\u2728 AI suggest for this slot'; btn.disabled = false; });
+}
+
+// ── Save new recipe from slot ──────────────────────────────
+function _saveNewSlot(day, meal) {
+  var slot = _plan.slots[day+'-'+meal];
+  if (!slot || !slot.isNew || !slot.aiSuggestion) return;
+  var s = slot.aiSuggestion;
+  openAddRecipe();
+  setTimeout(function() {
+    document.getElementById('addTitle').value       = s.name        || '';
+    document.getElementById('addDesc').value        = s.description || '';
+    document.getElementById('addIngredients').value = (s.ingredients||[]).join('\n');
+    document.getElementById('addInstructions').value= (s.instructions||[]).join('\n');
+    document.getElementById('addTags').value        = (s.tags||[]).join(', ');
+    document.getElementById('addTitle').focus();
+  }, 150);
+  window._plannerOnRecipeSaved = function(savedId) {
+    slot.recipeId = savedId;
+    slot.isNew = false;
+    slot.aiSuggestion = null;
+    _save();
+    _render();
+  };
+}
+
+// ── AI full-week plan ──────────────────────────────────────
+function openAiPlanModal() {
+  document.getElementById('aiSkipDays').innerHTML = DAYS.map(function(d,i) {
+    return '<label style="display:flex;align-items:center;gap:4px;font-size:13px;' +
+      'font-family:sans-serif;cursor:pointer;">' +
+      '<input type="checkbox" name="skipDay" value="' + d + '"> ' + DAY_SHORT[i] + '</label>';
+  }).join('');
+  document.getElementById('aiFormStep').style.display    = 'block';
+  document.getElementById('aiPreviewStep').style.display = 'none';
+  document.getElementById('aiPlanErr').style.display     = 'none';
+  document.getElementById('aiPlanModal').style.display   = 'flex';
+}
+function _closeAiModal() {
+  document.getElementById('aiPlanModal').style.display = 'none';
+  _pendingAi = null;
+}
+function _backToAiForm() {
+  document.getElementById('aiPreviewStep').style.display = 'none';
+  document.getElementById('aiFormStep').style.display    = 'block';
+}
+
+function _runAiPlan() {
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) {
+    var el = document.getElementById('aiPlanErr');
+    el.innerHTML = 'No API key \u2014 <button onclick="_closeAiModal();openApiSettings()" ' +
+      'style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:13px;' +
+      'font-family:sans-serif;text-decoration:underline;padding:0;">set it here</button>';
+    el.style.display = 'block'; return;
+  }
+
+  var people   = document.getElementById('aiPeople').value || 2;
+  var source   = document.getElementById('aiSource').value;
+  var prefs    = document.getElementById('aiPrefs').value.trim();
+  var skipDays = Array.from(document.querySelectorAll('input[name="skipDay"]:checked')).map(function(el){ return el.value; });
+
+  // Library context — rated recipes prioritised
+  var libLines = _allRecipes().map(function(r) {
+    var l = '- [' + (r.id||'new') + '] ' + r.name;
+    if (r.rating) l += ' [' + r.rating + '/5\u2605]';
+    if (r.note)   l += ' (note: ' + r.note.slice(0,80) + ')';
+    if (r.tags && r.tags.length) l += ' #' + r.tags.join(' #');
+    if (r.shelfLife==='first2') l += '  *** FISH \u2014 Mon or Tue ONLY ***';
+    if (r.shelfLife==='first3') l += '  [leafy greens \u2014 Mon\u2013Wed only]';
+    if (r.shelfLife==='early')  l += '  [meat \u2014 Mon\u2013Thu preferred]';
+    return l;
+  }).join('\n');
+
+  // Past weeks context
+  var pastLines = _pastPlans(3).map(function(p) {
+    var names = Object.values(p.plan.slots||{}).filter(Boolean).map(function(s){ return s.recipeName; }).join(', ');
+    return 'Week ' + p.key + ': ' + (names||'empty');
+  }).join('\n');
+
+  var today  = new Date();
+  var season = ['winter','winter','spring','spring','spring','summer','summer','summer','autumn','autumn','autumn','winter'][today.getMonth()];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var month  = months[today.getMonth()];
+
+  var sourceDesc = source==='library' ? 'use ONLY recipes from my library'
+                 : source==='new'     ? 'suggest mostly NEW seasonal recipes not in my library'
+                 :                      'mix 3\u20134 library favourites with 2\u20133 new seasonal ideas';
+
+  var slotsToFill = [];
+  DAYS.forEach(function(d) {
+    if (!skipDays.includes(d)) { slotsToFill.push(d+'-lunch'); slotsToFill.push(d+'-dinner'); }
+  });
+
+  var prompt =
+    'You are a thoughtful home meal planner. Return ONLY valid JSON \u2014 no markdown, no explanation.\n\n' +
+    'Today: ' + _fmtDate(today) + ' (' + season + ')\n' +
+    'Planning: week of ' + _fmtRange(_weekKey) + '\n' +
+    'People: ' + people + '\n' +
+    'Recipe source: ' + sourceDesc + '\n' +
+    (prefs ? 'User notes: ' + prefs + '\n' : '') +
+    (skipDays.length ? 'No cooking on: ' + skipDays.map(function(d){ return DAY_NAMES[DAYS.indexOf(d)]; }).join(', ') + '\n' : '') +
+    '\nMy recipe library (id, name, rating, notes, tags, shelf-life constraints):\n' + libLines +
+    (pastLines ? '\n\nRecent past plans \u2014 avoid repetition:\n' + pastLines : '') +
+    '\n\nRULES (strictly enforced):\n' +
+    '1. FISH (marked FISH): assign Monday or Tuesday ONLY\n' +
+    '2. Leafy green salads: Monday\u2013Wednesday only\n' +
+    '3. Meat: Monday\u2013Thursday preferred\n' +
+    '4. Vary proteins and cuisines across the week\n' +
+    '5. Prioritise highest-rated library recipes\n' +
+    '6. No recipe repeated twice in the same week\n' +
+    '7. Consider seasonal produce for ' + month + ' in Switzerland/France\n' +
+    '8. For "no-cook" days, set the slot to null\n' +
+    '\nSlots to fill: ' + slotsToFill.join(', ') + '\n' +
+    '\nReturn EXACTLY this JSON:\n' +
+    '{\n' +
+    '  "notes": "2\u20133 sentence summary of your choices and any shelf-life decisions",\n' +
+    '  "slots": {\n' +
+    '    "mon-lunch":  {"recipeId":"id-from-library-or-null","recipeName":"Name","tags":["tag"],"isNew":false},\n' +
+    '    "mon-dinner": {"recipeId":null,"recipeName":"New Dish","tags":["tag"],"isNew":true},\n' +
+    '    "tue-lunch": null,\n' +
+    '    ...all 14 slot keys...\n' +
+    '  },\n' +
+    '  "newRecipes": [\n' +
+    '    {"slotKey":"mon-dinner","name":"New Dish","description":"...","ingredients":["..."],"instructions":["..."],"tags":["..."]}\n' +
+    '  ]\n' +
+    '}';
+
+  var btn = document.getElementById('aiGenerateBtn');
+  btn.textContent = 'Generating\u2026'; btn.disabled = true;
+  document.getElementById('aiPlanErr').style.display = 'none';
+
+  _claude(prompt, 4096)
+  .then(function(text) {
+    var s = text.indexOf('{'), e = text.lastIndexOf('}');
+    var result = JSON.parse(text.slice(s, e+1));
+    _pendingAi = result;
+    _showAiPreview(result);
+  })
+  .catch(function(err) {
+    var el = document.getElementById('aiPlanErr');
+    el.textContent = 'Error: ' + err.message + '. Check your API key or try again.';
+    el.style.display = 'block';
+  })
+  .finally(function() { btn.textContent = '\u2728 Generate plan'; btn.disabled = false; });
+}
+
+function _showAiPreview(result) {
+  document.getElementById('aiPreviewNotes').textContent = result.notes || '';
+
+  var todayStr = new Date().toDateString();
+  var gHtml = '<div class="planner-grid" style="min-width:640px;">';
+  gHtml += '<div class="pg-corner"></div>';
+  DAYS.forEach(function(d,di) {
+    var date = _weekDate(di);
+    var isToday = date.toDateString() === todayStr;
+    gHtml += '<div class="pg-col-hdr' + (isToday ? ' today' : '') + '">' +
+      DAY_SHORT[di] + '<br><span class="pg-day-num">' + date.getDate() + '</span></div>';
+  });
+  MEALS.forEach(function(meal) {
+    gHtml += '<div class="pg-row-lbl">' + MEAL_LBL[meal] + '</div>';
+    DAYS.forEach(function(day) {
+      var s = (result.slots||{})[day+'-'+meal];
+      if (s) {
+        gHtml += '<div class="pg-slot pg-slot-filled' + (s.isNew?' pg-slot-new':'') + '" style="cursor:default;pointer-events:none;">' +
+          '<div class="pg-slot-name">' + s.recipeName + '</div>' +
+          (s.isNew ? '<span class="pg-tag pg-tag-new">new</span>' : '') +
+        '</div>';
+      } else {
+        gHtml += '<div class="pg-slot pg-slot-empty" style="cursor:default;pointer-events:none;">' +
+          '<span style="color:var(--border);font-size:18px;">\u2014</span></div>';
+      }
+    });
+  });
+  gHtml += '</div>';
+  document.getElementById('aiPreviewGrid').innerHTML = '<div style="overflow-x:auto;">' + gHtml + '</div>';
+
+  // New recipes section
+  var newRecs = result.newRecipes || [];
+  if (newRecs.length) {
+    document.getElementById('aiNewList').innerHTML = newRecs.map(function(r, i) {
+      return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;' +
+        'padding:10px 0;border-bottom:1px solid var(--border);">' +
+        '<div>' +
+          '<div style="font-size:14px;">' + r.name + '</div>' +
+          (r.description ? '<div style="font-size:12px;color:var(--muted);font-family:sans-serif;margin-top:2px;">' + r.description + '</div>' : '') +
+          ((r.tags||[]).length ? '<div style="margin-top:4px;">' + (r.tags||[]).map(function(t){
+            return '<span class="pill pill-prep" style="font-size:10px;">' + t + '</span>';
+          }).join('') + '</div>' : '') +
+        '</div>' +
+        '<button id="aiNewBtn_'+i+'" class="btn btn-outline" style="flex-shrink:0;font-size:12px;padding:4px 10px;" ' +
+          'onclick="_saveNewFromAi('+i+')">+ Library</button>' +
+      '</div>';
+    }).join('');
+    document.getElementById('aiNewSection').style.display = 'block';
+  } else {
+    document.getElementById('aiNewSection').style.display = 'none';
+  }
+
+  document.getElementById('aiFormStep').style.display    = 'none';
+  document.getElementById('aiPreviewStep').style.display = 'block';
+}
+
+function _saveNewFromAi(idx) {
+  var r = (_pendingAi && _pendingAi.newRecipes||[])[idx];
+  if (!r) return;
+  openAddRecipe();
+  setTimeout(function() {
+    document.getElementById('addTitle').value        = r.name        || '';
+    document.getElementById('addDesc').value         = r.description || '';
+    document.getElementById('addIngredients').value  = (r.ingredients||[]).join('\n');
+    document.getElementById('addInstructions').value = (r.instructions||[]).join('\n');
+    document.getElementById('addTags').value         = (r.tags||[]).join(', ');
+    document.getElementById('addTitle').focus();
+  }, 150);
+  window._plannerOnRecipeSaved = function(savedId) {
+    // Update any pending slots that use this recipe name
+    if (_pendingAi && _pendingAi.slots) {
+      Object.keys(_pendingAi.slots).forEach(function(k) {
+        var s = _pendingAi.slots[k];
+        if (s && s.isNew && s.recipeName === r.name) {
+          s.recipeId = savedId; s.isNew = false; s.aiSuggestion = null;
+        }
+      });
+    }
+    var btn = document.getElementById('aiNewBtn_' + idx);
+    if (btn) { btn.textContent = '\u2713 Saved'; btn.disabled = true; }
+  };
+}
+
+function _applyAiPlan() {
+  if (!_pendingAi || !_pendingAi.slots) return;
+  var slots = _pendingAi.slots;
+  Object.keys(slots).forEach(function(k) {
+    if (Object.prototype.hasOwnProperty.call(_plan.slots, k)) {
+      _plan.slots[k] = slots[k] || null;
+    }
+  });
+  if (_pendingAi.notes) _plan.notes = _pendingAi.notes;
+  _save();
+  _closeAiModal();
+  _render();
+}
+
+// ── Shopping list ──────────────────────────────────────────
+function openShoppingModal() {
+  var filled = Object.entries(_plan.slots).filter(function(e){ return !!e[1]; });
+  document.getElementById('shoppingSub').textContent =
+    filled.length + ' meal' + (filled.length!==1?'s':'') + ' planned \xb7 ' + _fmtRange(_weekKey);
+
+  if (!filled.length) {
+    document.getElementById('shoppingContent').innerHTML =
+      '<p style="color:var(--muted);font-size:14px;font-family:sans-serif;">No meals planned yet.</p>';
+    document.getElementById('shoppingModal').style.display = 'flex';
+    return;
+  }
+
+  // Sort by day/meal order
+  var order = [];
+  DAYS.forEach(function(d) { MEALS.forEach(function(m) { order.push(d+'-'+m); }); });
+  filled.sort(function(a,b){ return order.indexOf(a[0]) - order.indexOf(b[0]); });
+
+  var html = '';
+  filled.forEach(function(entry) {
+    var slotId = entry[0], slot = entry[1];
+    var parts  = slotId.split('-');
+    var dayLbl = DAY_NAMES[DAYS.indexOf(parts[0])] + ' ' + MEAL_LBL[parts[1]];
+    var rec    = slot.recipeId ? _recipeById(slot.recipeId) : null;
+    var ings   = (rec && rec.ingredients) ||
+                 (slot.aiSuggestion && slot.aiSuggestion.ingredients) || null;
+
+    html += '<div style="margin-bottom:20px;">' +
+      '<div style="font-size:11px;font-family:sans-serif;font-weight:700;text-transform:uppercase;' +
+        'letter-spacing:.07em;color:var(--muted);margin-bottom:6px;">' +
+        dayLbl + ' \xb7 ' + slot.recipeName + '</div>';
+
+    if (ings && ings.length) {
+      html += '<ul style="list-style:none;">' +
+        ings.map(function(i){ return '<li style="padding:4px 0;border-bottom:1px solid var(--border);font-size:14px;">' + i + '</li>'; }).join('') +
+        '</ul>';
+    } else if (rec && rec.href) {
+      html += '<a href="' + rec.href + '" style="font-size:13px;color:var(--teal);" target="_blank">See recipe page \u2192</a>';
+    } else {
+      html += '<p style="font-size:13px;color:var(--muted);font-family:sans-serif;">No ingredients stored.</p>';
+    }
+    html += '</div>';
+  });
+
+  document.getElementById('shoppingContent').innerHTML = html;
+  document.getElementById('shoppingModal').style.display = 'flex';
+}
+function _closeShoppingModal() { document.getElementById('shoppingModal').style.display = 'none'; }
+function _copyShoppingList() {
+  var order = [];
+  DAYS.forEach(function(d){ MEALS.forEach(function(m){ order.push(d+'-'+m); }); });
+  var filled = Object.entries(_plan.slots).filter(function(e){ return !!e[1]; });
+  filled.sort(function(a,b){ return order.indexOf(a[0])-order.indexOf(b[0]); });
+
+  var lines = ['Shopping list \u2014 ' + _fmtRange(_weekKey), ''];
+  filled.forEach(function(entry) {
+    var parts = entry[0].split('-');
+    var slot  = entry[1];
+    lines.push('## ' + DAY_NAMES[DAYS.indexOf(parts[0])] + ' ' + MEAL_LBL[parts[1]] + ': ' + slot.recipeName);
+    var rec  = slot.recipeId ? _recipeById(slot.recipeId) : null;
+    var ings = (rec && rec.ingredients) || (slot.aiSuggestion && slot.aiSuggestion.ingredients) || [];
+    ings.forEach(function(i){ lines.push('- ' + i); });
+    if (!ings.length && rec && rec.href) lines.push('See: ' + rec.href);
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(function() {
+    var btn = document.querySelector('#shoppingModal .btn-teal');
+    btn.textContent = '\u2713 Copied!';
+    setTimeout(function(){ btn.textContent = 'Copy list'; }, 2200);
+  });
+}
+
+// ── Claude helper ──────────────────────────────────────────
+function _claude(prompt, maxTokens) {
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) return Promise.reject(new Error('No API key. Click \u2699 in the nav bar to set it.'));
+  return fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: maxTokens || 2048,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) return r.json().then(function(e){ throw new Error(e.error&&e.error.message||'API error '+r.status); });
+    return r.json();
+  })
+  .then(function(d) { return d.content&&d.content[0]&&d.content[0].text||''; });
+}
+
+// ── Keyboard ───────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  _closePicker();
+  _closeAiModal();
+  _closeShoppingModal();
+});
+
+// ── Init ──────────────────────────────────────────────────
+_plan = _load(_weekKey);
+_render();
+</script>
+</body>
+</html>

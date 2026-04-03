@@ -22,6 +22,7 @@
       '<a class="gb-home" href="' + root + 'index.html">Weekly plan</a>' +
       '<div class="gb-right">' +
         '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
+        '<a class="gb-nav-link" href="' + root + 'planner.html">Planner</a>' +
         '<a class="gb-saved-link" href="' + root + 'saved.html">My recipes' +
           (count ? ' <span class="gb-badge">' + count + '</span>' : '') +
         '</a>' +
@@ -265,16 +266,23 @@
       tags: tags
     };
 
+    var savedId;
     if (_navEditId) {
       set(_navEditId, data);
+      savedId = _navEditId;
     } else {
       var id = 'custom-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
       set(id, Object.assign(data, { saved: true, custom: true, rating: 0, note: '', createdAt: Date.now() }));
+      savedId = id;
     }
 
     closeModal('addModal');
     window._updateGlobalBar();
     if (typeof window._onNavAction === 'function') window._onNavAction(_navEditId ? 'update' : 'add');
+    if (typeof window._plannerOnRecipeSaved === 'function') {
+      window._plannerOnRecipeSaved(savedId);
+      window._plannerOnRecipeSaved = null;
+    }
   };
 
   // ── AI parsing ──────────────────────────────────────────────────────────────

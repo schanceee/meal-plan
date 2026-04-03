@@ -429,3 +429,111 @@ a { color: inherit; text-decoration: none; }
   .gb-search { display: none; }
   .gb-add { font-size: 11px; padding: 0 9px; }
 }
+
+/* ── WEEKLY PLANNER ───────────────────────────────────────────── */
+
+.planner-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; margin-bottom: 28px;
+}
+.week-nav { display: flex; align-items: center; gap: 6px; }
+.week-nav-btn {
+  width: 30px; height: 30px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 15px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--text);
+  font-family: 'Helvetica Neue', sans-serif;
+}
+.week-nav-btn:hover { border-color: var(--teal); color: var(--teal); }
+.week-label {
+  font-size: 14px; font-weight: 600; font-family: 'Helvetica Neue', sans-serif;
+  color: var(--text); min-width: 190px; text-align: center;
+}
+
+/* Grid: 1 label col + 7 day cols */
+.planner-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 40px;
+}
+.pg-corner { /* empty top-left cell */ }
+.pg-col-hdr {
+  text-align: center; padding: 8px 2px 10px;
+  font-size: 10px; font-family: 'Helvetica Neue', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); line-height: 1;
+}
+.pg-col-hdr.today { color: var(--teal); }
+.pg-day-num {
+  font-size: 20px; font-weight: 300; display: block; margin-top: 4px;
+  font-family: 'Helvetica Neue', sans-serif; letter-spacing: 0; color: var(--text);
+}
+.pg-col-hdr.today .pg-day-num { color: var(--teal); font-weight: 600; }
+.pg-row-lbl {
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 8px; font-size: 10px; font-family: 'Helvetica Neue', sans-serif;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+}
+
+/* Slots */
+.pg-slot {
+  min-height: 90px; border-radius: 8px; padding: 8px;
+  cursor: pointer; position: relative; display: flex; flex-direction: column;
+  transition: border-color 0.12s, background 0.12s;
+}
+.pg-slot-empty {
+  border: 1.5px dashed var(--border); background: var(--surface);
+  align-items: center; justify-content: center;
+}
+.pg-slot-empty:hover { border-color: var(--teal); background: var(--teal-light); }
+.pg-slot-filled {
+  border: 1.5px solid var(--border); background: var(--surface);
+}
+.pg-slot-filled:hover { border-color: var(--teal); }
+.pg-slot-new  { border-color: var(--amber) !important; background: var(--amber-light); }
+.pg-add-icon  {
+  font-size: 22px; font-weight: 200; color: var(--border);
+  font-family: 'Helvetica Neue', sans-serif; user-select: none; line-height: 1;
+}
+.pg-slot-empty:hover .pg-add-icon { color: var(--teal); }
+.pg-slot-name {
+  font-size: 11px; line-height: 1.35; color: var(--text); flex: 1;
+  overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  margin-right: 14px;
+}
+.pg-slot-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.pg-tag {
+  font-size: 9px; font-family: 'Helvetica Neue', sans-serif;
+  font-weight: 700; padding: 2px 5px; border-radius: 5px;
+  text-transform: uppercase; letter-spacing: .04em;
+  background: var(--green-light); color: var(--green);
+}
+.pg-tag-fish { background: var(--blue-light);   color: var(--blue); }
+.pg-tag-meat { background: var(--red-light);    color: var(--red); }
+.pg-tag-new  { background: var(--amber-light);  color: var(--amber); }
+.pg-clear {
+  position: absolute; top: 5px; right: 5px; width: 18px; height: 18px;
+  border-radius: 50%; border: none; background: transparent; cursor: pointer;
+  font-size: 14px; color: var(--muted); opacity: 0; transition: opacity 0.1s;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+  font-family: sans-serif; line-height: 1;
+}
+.pg-slot-filled:hover .pg-clear { opacity: 1; }
+.pg-clear:hover { background: var(--red-light); color: var(--red); }
+.pg-save-new {
+  font-size: 10px; font-family: sans-serif; margin-top: 5px; align-self: flex-start;
+  background: none; border: 1px solid var(--amber); border-radius: 4px;
+  color: var(--amber); cursor: pointer; padding: 2px 6px; white-space: nowrap;
+}
+.pg-save-new:hover { background: var(--amber-light); }
+
+/* Slot picker results */
+.picker-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 8px; padding: 9px 8px; border-radius: 6px; cursor: pointer;
+  border: 1px solid transparent; transition: background 0.1s, border-color 0.1s;
+}
+.picker-item:hover { background: var(--teal-light); border-color: var(--teal); }
+.picker-item-name { font-size: 13px; line-height: 1.4; color: var(--text); }
