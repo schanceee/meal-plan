@@ -89,7 +89,9 @@
 
   function slotHref(slot) {
     if (!slot || !slot.recipeId) return null;
-    return WEEKLY_HREF[slot.recipeId] || null;
+    if (WEEKLY_HREF[slot.recipeId]) return WEEKLY_HREF[slot.recipeId];
+    if (slot.recipeId.indexOf('custom-') === 0) return 'library.html?q=' + encodeURIComponent(slot.recipeName || '');
+    return null;
   }
 
   // ── Load plan ──────────────────────────────────────────

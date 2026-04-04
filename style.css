@@ -424,13 +424,44 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 600px) {
-  .container { padding: 24px 16px 60px; }
+  .container { padding: 24px 16px 80px; }
   .bring-box { flex-direction: column; }
   .gb-search { display: none; }
   .gb-add { font-size: 11px; padding: 0 9px; }
   .gb-nav-link { display: none; }
   .planner-actions { margin-left: 0 !important; width: 100%; }
 }
+
+/* ── Bottom navigation (mobile only) ─────────────────────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--dark);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  z-index: 900;
+  align-items: stretch;
+}
+@media (max-width: 600px) {
+  .bottom-nav { display: flex; }
+}
+.bn-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  font-family: 'Helvetica Neue', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  border-top: 2px solid transparent;
+}
+.bn-tab.bn-active { color: white; border-top-color: var(--teal); }
+.bn-tab:hover { color: rgba(255,255,255,0.8); }
 
 .planner-actions {
   margin-left: auto;
@@ -623,7 +654,7 @@ a { color: inherit; text-decoration: none; }
 }
 .feedback-fab:hover { transform: scale(1.1); box-shadow: 0 6px 24px rgba(0,0,0,0.28); }
 @media (max-width: 600px) {
-  .feedback-fab { bottom: 16px; right: 16px; width: 46px; height: 46px; font-size: 20px; }
+  .feedback-fab { bottom: 64px; right: 16px; width: 46px; height: 46px; font-size: 20px; }
 }
 
 .feedback-toast {
@@ -636,7 +667,7 @@ a { color: inherit; text-decoration: none; }
 }
 .feedback-toast-hide { opacity: 0; }
 @media (max-width: 600px) {
-  .feedback-toast { right: 16px; bottom: 74px; }
+  .feedback-toast { right: 16px; bottom: 120px; }
 }
 
 /* Slot picker results */
@@ -1048,6 +1079,6 @@ a { color: inherit; text-decoration: none; }
 }
 .mp-banner-btns { display: flex; gap: 8px; flex-shrink: 0; }
 @media (max-width: 600px) {
-  .mp-banner { bottom: 74px; }
+  .mp-banner { bottom: 64px; }
   .mp-banner-msg { font-size: 13px; }
 }

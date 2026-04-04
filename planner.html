@@ -360,7 +360,7 @@ function _renderSlot(day, meal, data) {
   var meta = get(data.recipeId || '') || {};
   var stars = meta.rating ? '\u2605'.repeat(meta.rating) : '';
   var rec = data.recipeId ? _recipeById(data.recipeId) : null;
-  var href = rec && rec.href ? rec.href : (data.recipeId && data.recipeId.indexOf('custom-') === 0 ? 'library.html' : null);
+  var href = rec && rec.href ? rec.href : (data.recipeId && data.recipeId.indexOf('custom-') === 0 ? 'library.html?q=' + encodeURIComponent(data.recipeName || '') : null);
 
   return '<div class="pg-slot pg-slot-filled' + (data.isNew ? ' pg-slot-new' : '') + '" ' +
     'onclick="_openPicker(\'' + day + '\',\'' + meal + '\')">' +

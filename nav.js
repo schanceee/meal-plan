@@ -291,12 +291,28 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       '</div>';
     document.body.insertBefore(bar, document.body.firstChild);
     document.body.style.paddingTop = '44px';
+    renderBottomNav();
     _updateAuthBar();
     document.getElementById('gbSearch').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && this.value.trim()) {
         location.href = root + 'library.html?q=' + encodeURIComponent(this.value.trim());
       }
     });
+  }
+
+  function renderBottomNav() {
+    var page = location.pathname;
+    var isHome    = /index\.html$|\/meal-plan\/?$|^\/$/.test(page) && !/library|planner/.test(page);
+    var isLibrary = /library\.html/.test(page);
+    var isPlanner = /planner\.html/.test(page);
+    var nav = document.createElement('nav');
+    nav.id = 'bottomNav';
+    nav.className = 'bottom-nav';
+    nav.innerHTML =
+      '<a class="bn-tab' + (isHome    ? ' bn-active' : '') + '" href="' + root + 'index.html">Home</a>' +
+      '<a class="bn-tab' + (isLibrary ? ' bn-active' : '') + '" href="' + root + 'library.html">Library</a>' +
+      '<a class="bn-tab' + (isPlanner ? ' bn-active' : '') + '" href="' + root + 'planner.html">Planner</a>';
+    document.body.appendChild(nav);
   }
 
   window._updateGlobalBar = function () {
