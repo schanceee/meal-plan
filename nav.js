@@ -245,6 +245,8 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       .catch(function (e) { console.warn('Sync error', e); });
   }
 
+  window._syncRecipe = _syncRecipe;
+
   window._syncPlan = function (weekKey, planData) {
     if (!_supaReady() || !_session) return;
     var tok = _session.access_token, uid = _session.user.id;
@@ -270,7 +272,6 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
   // ── Global bar ──────────────────────────────────────────────────────────────
 
   function renderGlobalBar() {
-    var count = getSaved().length;
     var bar = document.createElement('div');
     bar.id = 'globalBar';
     bar.className = 'global-bar';
@@ -279,9 +280,6 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       '<div class="gb-right">' +
         '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
         '<a class="gb-nav-link" href="' + root + 'planner.html">Planner</a>' +
-        '<a class="gb-saved-link" href="' + root + 'library.html">Saved' +
-          (count ? ' <span class="gb-badge">' + count + '</span>' : '') +
-        '</a>' +
         '<input id="gbSearch" class="gb-search" type="search" placeholder="Search library\u2026">' +
         '<span id="gbSignIn" style="display:flex;align-items:center;">' +
           '<button class="gb-signin-btn" onclick="openAuthModal()">Sign in</button>' +
@@ -290,14 +288,24 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
         '<button class="gb-add" onclick="openAddRecipe()">+ Add recipe</button>' +
       '</div>';
     document.body.insertBefore(bar, document.body.firstChild);
+    // Mobile search bar — sits below the nav, only visible on mobile
+    var searchBar = document.createElement('div');
+    searchBar.id = 'gbMobileSearch';
+    searchBar.className = 'gb-mobile-search';
+    searchBar.innerHTML = '<input id="gbMobileSearchInput" class="gb-mobile-search-input" type="search" placeholder="Search library\u2026">';
+    document.body.insertBefore(searchBar, document.body.children[1]);
     document.body.style.paddingTop = '44px';
     renderBottomNav();
     _updateAuthBar();
-    document.getElementById('gbSearch').addEventListener('keydown', function (e) {
+    // Pull from Supabase on every page load if already signed in
+    if (_session) _pullFromSupabase();
+    var searchHandler = function (e) {
       if (e.key === 'Enter' && this.value.trim()) {
         location.href = root + 'library.html?q=' + encodeURIComponent(this.value.trim());
       }
-    });
+    };
+    document.getElementById('gbSearch').addEventListener('keydown', searchHandler);
+    document.getElementById('gbMobileSearchInput').addEventListener('keydown', searchHandler);
   }
 
   function renderBottomNav() {
@@ -315,18 +323,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     document.body.appendChild(nav);
   }
 
-  window._updateGlobalBar = function () {
-    var link = document.querySelector('.gb-saved-link');
-    if (!link) return;
-    var count = getSaved().length;
-    var badge = link.querySelector('.gb-badge');
-    if (count > 0) {
-      if (badge) { badge.textContent = count; }
-      else { link.insertAdjacentHTML('beforeend', ' <span class="gb-badge">' + count + '</span>'); }
-    } else {
-      if (badge) badge.parentNode.removeChild(badge);
-    }
-  };
+  window._updateGlobalBar = function () { /* no-op: Saved badge removed */ };
 
   // ── Modals ──────────────────────────────────────────────────────────────────
 

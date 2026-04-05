@@ -355,11 +355,6 @@ a { color: inherit; text-decoration: none; }
   color: rgba(255,255,255,0.75); white-space: nowrap;
 }
 .gb-nav-link:hover { color: white; }
-.gb-saved-link {
-  font-family: 'Helvetica Neue', sans-serif; font-size: 13px; font-weight: 600;
-  color: rgba(255,255,255,0.85); white-space: nowrap;
-}
-.gb-saved-link:hover { color: white; }
 .gb-badge {
   display: inline-flex; align-items: center; justify-content: center;
   background: #c0392b; color: white; border-radius: 10px;
@@ -423,8 +418,31 @@ a { color: inherit; text-decoration: none; }
   font-size: 13px; color: var(--muted); font-style: italic; line-height: 1.5;
 }
 
+/* ── Mobile search bar (below global nav) ─────────────────── */
+.gb-mobile-search {
+  display: none;
+  position: fixed;
+  top: 44px; left: 0; right: 0;
+  z-index: 199;
+  background: #3a3020;
+  padding: 6px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.gb-mobile-search-input {
+  width: 100%; height: 32px; padding: 0 12px;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 16px;
+  background: rgba(255,255,255,0.1); color: white;
+  font-family: 'Helvetica Neue', sans-serif; font-size: 13px;
+  box-sizing: border-box;
+}
+.gb-mobile-search-input::placeholder { color: rgba(255,255,255,0.5); }
+.gb-mobile-search-input:focus { outline: none; border-color: rgba(255,255,255,0.4); }
+
 @media (max-width: 600px) {
+  .gb-mobile-search { display: block; }
   .container { padding: 24px 16px 80px; }
+  /* extra top padding for nav (44px) + search bar (44px) */
+  body { padding-top: 88px !important; }
   .bring-box { flex-direction: column; }
   .gb-search { display: none; }
   .gb-add { font-size: 11px; padding: 0 9px; }

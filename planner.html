@@ -261,8 +261,9 @@ function _load(key) {
   try { return JSON.parse(localStorage.getItem('weekPlan_'+key)) || _fresh(); }
   catch(e) { return _fresh(); }
 }
-function _save() {
+function _savePlan() {
   _plan.updatedAt = Date.now();
+  // note: do NOT name this _save() — that name is used by recipes.js internally
   localStorage.setItem('weekPlan_'+_weekKey, JSON.stringify(_plan));
   window._syncPlan && window._syncPlan(_weekKey, _plan);
 }
@@ -327,7 +328,7 @@ function _cleanupGhostRecipes() {
       }
     }
   });
-  if (changed) _save();
+  if (changed) _savePlan();
 }
 
 // ── Navigation ─────────────────────────────────────────────
@@ -407,7 +408,7 @@ function _renderSlot(day, meal, data) {
 // ── Slot actions ───────────────────────────────────────────
 function _clearSlot(day, meal) {
   _plan.slots[day+'-'+meal] = null;
-  _save();
+  _savePlan();
   _render();
   _maybeBannerMealPrep();
 }
@@ -442,7 +443,7 @@ function _assign(recipeId, recipeName, tags, isNew, aiSuggestion) {
     isNew: finalIsNew,
     aiSuggestion: finalAiSuggestion
   };
-  _save();
+  _savePlan();
   _closePicker();
   _render();
   _maybeBannerMealPrep();
@@ -588,7 +589,7 @@ function _saveNewSlot(day, meal) {
     slot.recipeId = savedId;
     slot.isNew = false;
     slot.aiSuggestion = null;
-    _save();
+    _savePlan();
     _render();
   };
 }
@@ -794,6 +795,8 @@ function _saveNewFromAi(idx) {
   });
   // Track savedId so _applyAiPlan() won't duplicate it
   r.savedId = newId;
+  // Sync to Supabase so the recipe appears on other devices
+  if (window._syncRecipe) window._syncRecipe(newId, get(newId));
   // Update any pending slots that use this recipe
   Object.keys(_pendingAi.slots || {}).forEach(function(k) {
     var s = _pendingAi.slots[k];
@@ -844,6 +847,8 @@ function _applyAiPlan() {
     s.recipeId = id;
     s.isNew = false;
     s.aiSuggestion = null;
+    // Sync to Supabase so the recipe appears on other devices
+    if (window._syncRecipe) window._syncRecipe(id, get(id));
   });
 
   // Merge all slots into the plan (unconditional — _fresh() ensures all keys exist)
@@ -851,7 +856,7 @@ function _applyAiPlan() {
     _plan.slots[k] = slots[k] || null;
   });
   if (_pendingAi.notes) _plan.notes = _pendingAi.notes;
-  _save();
+  _savePlan();
   _closeAiModal();
   _render();
   _maybeBannerMealPrep();
@@ -1131,7 +1136,7 @@ function _generateMealPrep() {
   _claude(prompt, 1200)
     .then(function(text) {
       _plan.mealPrep = text.trim();
-      _save();
+      _savePlan();
       _renderPlanDetails();
     })
     .catch(function(err) {
