@@ -295,11 +295,39 @@ function _allRecipes() {
   var custom = getAll();
   Object.keys(custom).forEach(function(id) {
     var r = custom[id];
-    if (r && r.name) list.push(Object.assign({
-      id:id, tags:[], ingredients:[], href:null, shelfLife:'any'
-    }, r, { rating: r.rating||0 }));
+    // Only show properly-structured custom recipes (custom:true + saved:true)
+    if (r && r.custom && r.saved && r.name) {
+      list.push(Object.assign({ id:id, tags:[], ingredients:[], href:null, shelfLife:'any' }, r, { rating: r.rating||0 }));
+    }
   });
   return list;
+}
+
+// ── Ghost recipe cleanup ────────────────────────────────────
+function _cleanupGhostRecipes() {
+  var changed = false;
+  // Ensure all custom-* entries in localStorage have custom:true and saved:true
+  var all = getAll();
+  Object.keys(all).forEach(function(id) {
+    var r = all[id];
+    if (r && id.indexOf('custom-') === 0 && r.name && (!r.custom || !r.saved)) {
+      set(id, { custom: true, saved: true });
+      changed = true;
+    }
+  });
+  // Clear plan slots that point to non-existent or malformed recipes
+  Object.keys(_plan.slots).forEach(function(k) {
+    var s = _plan.slots[k];
+    if (!s || !s.recipeId) return;
+    if (s.recipeId.indexOf('custom-') === 0) {
+      var rec = get(s.recipeId);
+      if (!rec || !rec.name) {
+        _plan.slots[k] = null;
+        changed = true;
+      }
+    }
+  });
+  if (changed) _save();
 }
 
 // ── Navigation ─────────────────────────────────────────────
@@ -312,6 +340,7 @@ function changeWeek(dir) {
     _weekKey = _getMondayKey(d);
   }
   _plan = _load(_weekKey);
+  _cleanupGhostRecipes();
   _render();
 }
 
@@ -742,48 +771,65 @@ function _showAiPreview(result) {
 }
 
 function _saveNewFromAi(idx) {
-  var r = (_pendingAi && _pendingAi.newRecipes||[])[idx];
+  if (!_pendingAi) return;
+  var r = (_pendingAi.newRecipes || [])[idx];
   if (!r) return;
-  openAddRecipe();
-  setTimeout(function() {
-    document.getElementById('addTitle').value        = r.name        || '';
-    document.getElementById('addDesc').value         = r.description || '';
-    document.getElementById('addIngredients').value  = (r.ingredients||[]).join('\n');
-    document.getElementById('addInstructions').value = (r.instructions||[]).join('\n');
-    document.getElementById('addTags').value         = (r.tags||[]).join(', ');
-    document.getElementById('addTitle').focus();
-  }, 150);
-  window._plannerOnRecipeSaved = function(savedId) {
-    // Update any pending slots that use this recipe name
-    if (_pendingAi && _pendingAi.slots) {
-      Object.keys(_pendingAi.slots).forEach(function(k) {
-        var s = _pendingAi.slots[k];
-        if (s && s.isNew && s.recipeName === r.name) {
-          s.recipeId = savedId; s.isNew = false; s.aiSuggestion = null;
-        }
-      });
-    }
+  // Already saved — update button state only
+  if (r.savedId) {
     var btn = document.getElementById('aiNewBtn_' + idx);
     if (btn) { btn.textContent = '\u2713 Saved'; btn.disabled = true; }
-  };
+    return;
+  }
+  // Save directly to library (no modal)
+  var newId = 'custom-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+  set(newId, {
+    saved: true, custom: true,
+    name: (r.name || '').trim(),
+    description: r.description || '',
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+    instructions: Array.isArray(r.instructions) ? r.instructions : [],
+    tags: r.tags || [],
+    category: r.category || 'main',
+    rating: 0, note: '', createdAt: Date.now()
+  });
+  // Track savedId so _applyAiPlan() won't duplicate it
+  r.savedId = newId;
+  // Update any pending slots that use this recipe
+  Object.keys(_pendingAi.slots || {}).forEach(function(k) {
+    var s = _pendingAi.slots[k];
+    if (s && s.isNew && (r.slotKey === k || s.recipeName === r.name)) {
+      s.recipeId = newId; s.isNew = false; s.aiSuggestion = null;
+    }
+  });
+  // Update button
+  var btn2 = document.getElementById('aiNewBtn_' + idx);
+  if (btn2) { btn2.textContent = '\u2713 Saved'; btn2.disabled = true; }
 }
 
 function _applyAiPlan() {
   if (!_pendingAi || !_pendingAi.slots) return;
   var slots = _pendingAi.slots;
 
-  // Build map slotKey → full recipe data from newRecipes array
+  // Build map slotKey → newRecipe entry (may already have savedId)
   var newRecipeMap = {};
   (_pendingAi.newRecipes || []).forEach(function(r) {
     if (r.slotKey) newRecipeMap[r.slotKey] = r;
   });
 
-  // Auto-save new AI-suggested recipes to the library
+  // Save any new recipes not yet individually saved
   var seq = 0;
   Object.keys(slots).forEach(function(k) {
     var s = slots[k];
     if (!s || !s.isNew) return;
-    var rData = newRecipeMap[k] || s.aiSuggestion || {};
+    var rData = newRecipeMap[k] || {};
+    // Already saved via "+ Library" — reuse existing ID
+    if (rData.savedId) {
+      s.recipeId = rData.savedId;
+      s.isNew = false;
+      s.aiSuggestion = null;
+      return;
+    }
+    // Save now
     var id = 'custom-' + Date.now() + '-' + (++seq);
     set(id, {
       saved: true, custom: true,
@@ -800,10 +846,9 @@ function _applyAiPlan() {
     s.aiSuggestion = null;
   });
 
+  // Merge all slots into the plan (unconditional — _fresh() ensures all keys exist)
   Object.keys(slots).forEach(function(k) {
-    if (Object.prototype.hasOwnProperty.call(_plan.slots, k)) {
-      _plan.slots[k] = slots[k] || null;
-    }
+    _plan.slots[k] = slots[k] || null;
   });
   if (_pendingAi.notes) _plan.notes = _pendingAi.notes;
   _save();
@@ -1136,6 +1181,7 @@ document.addEventListener('keydown', function(e) {
 
 // ── Init ──────────────────────────────────────────────────
 _plan = _load(_weekKey);
+_cleanupGhostRecipes();
 _render();
 </script>
 </body>
