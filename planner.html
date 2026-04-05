@@ -395,7 +395,6 @@ function _renderSlot(day, meal, data) {
   return '<div class="pg-slot pg-slot-filled' + (data.isNew ? ' pg-slot-new' : '') + '" ' +
     'onclick="_openPicker(\'' + day + '\',\'' + meal + '\')">' +
     '<button class="pg-clear" onclick="event.stopPropagation();_clearSlot(\'' + day + '\',\'' + meal + '\')" title="Remove">\xd7</button>' +
-    (href ? '<a class="pg-recipe-link" href="' + href + '" onclick="event.stopPropagation()" title="View recipe">\u2197</a>' : '') +
     '<div class="pg-slot-name">' + (data.recipeName || '') + '</div>' +
     (stars ? '<div style="color:#d4960a;font-size:10px;margin-top:2px;">' + stars + '</div>' : '') +
     (tagsHtml || data.isNew ? '<div class="pg-slot-tags">' + tagsHtml + (data.isNew ? '<span class="pg-tag pg-tag-new">new</span>' : '') + '</div>' : '') +

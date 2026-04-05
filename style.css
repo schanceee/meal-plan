@@ -380,7 +380,7 @@ a { color: inherit; text-decoration: none; }
 /* SAVED PAGE */
 .saved-page-hero {
   background: linear-gradient(135deg, #3d5a27 0%, #5c7a3e 50%, #7a9a5a 100%);
-  color: white; padding: 24px 24px 18px; text-align: center;
+  color: white; padding: 14px 24px 10px; text-align: center;
 }
 .saved-page-hero h1 { font-size: clamp(22px, 4vw, 36px); font-weight: normal; margin-bottom: 6px; }
 .saved-page-sub { font-size: 14px; opacity: 0.8; font-style: italic; }
@@ -493,7 +493,7 @@ a { color: inherit; text-decoration: none; }
 
 .planner-toolbar {
   display: flex; align-items: center; gap: 10px;
-  flex-wrap: wrap; margin-bottom: 16px;
+  flex-wrap: wrap; margin-bottom: 10px;
 }
 .week-nav { display: flex; align-items: center; gap: 6px; }
 .week-nav-btn {
@@ -569,7 +569,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 11px; line-height: 1.35; color: var(--text); flex: 1;
   overflow: hidden; display: -webkit-box;
   -webkit-line-clamp: 4; -webkit-box-orient: vertical;
-  margin-right: 14px;
+  margin-right: 4px;
 }
 .pg-slot-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
 .pg-tag {
@@ -701,18 +701,18 @@ a { color: inherit; text-decoration: none; }
 .plan-details-section {
   background: var(--surface);
   border-top: 2px solid var(--border);
-  margin-top: 48px;
+  margin-top: 24px;
 }
 .pd-wrap {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 20px 20px 40px;
+  padding: 14px 20px 28px;
 }
 .pd-header {
   display: flex;
   align-items: baseline;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .pd-title {
   font-size: 11px;
