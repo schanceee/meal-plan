@@ -381,8 +381,29 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       '<div id="addModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'addModal\')">' +
         '<div class="modal-box" style="max-width:640px;max-height:92vh;overflow-y:auto;">' +
           '<div class="modal-label" id="addModalLabel">Add recipe</div>' +
+          // ── Generate with AI
+          '<div style="margin-top:10px;">' +
+            '<textarea id="addGenPrompt" rows="2" ' +
+              'placeholder="Describe what you want to cook\u2026 e.g. \u201ca quick vegetarian pasta with pantry staples\u201d" ' +
+              'style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;' +
+              'font-family:Georgia,serif;font-size:14px;color:var(--text);resize:none;box-sizing:border-box;"></textarea>' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">' +
+              '<button id="addGenBtn" class="btn btn-teal" onclick="_navGenerateWithAi()">\u2728 Generate with AI</button>' +
+              '<button id="addGenMicBtn" class="btn btn-outline" onclick="_navToggleGenMic()" ' +
+                'style="padding:7px 12px;font-size:13px;">\uD83C\uDF99 Voice</button>' +
+              '<span id="addGenStatus" style="font-size:12px;font-family:sans-serif;color:var(--muted);"></span>' +
+              '<span id="addGenErr" style="display:none;font-size:12px;color:#c0392b;font-family:sans-serif;"></span>' +
+            '</div>' +
+          '</div>' +
+          // ── Divider
+          '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px;font-size:11px;' +
+            'color:var(--muted);font-family:sans-serif;letter-spacing:.06em;text-transform:uppercase;">' +
+            '<div style="flex:1;height:1px;background:var(--border);"></div>' +
+            'or import from URL' +
+            '<div style="flex:1;height:1px;background:var(--border);"></div>' +
+          '</div>' +
           // ── URL import
-          '<div style="display:flex;gap:8px;margin-top:10px;">' +
+          '<div style="display:flex;gap:8px;">' +
             '<input id="addUrlInput" type="url" placeholder="Paste a recipe URL to import automatically\u2026" ' +
               'style="flex:1;border:1px solid var(--border);border-radius:8px;padding:9px 12px;' +
               'font-family:Georgia,serif;font-size:14px;color:var(--text);min-width:0;box-sizing:border-box;">' +
@@ -589,12 +610,15 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
   window.openAddRecipe = function () {
     _navEditId = null;
     document.getElementById('addModalLabel').textContent = 'Add recipe';
+    document.getElementById('addGenPrompt').value = '';
+    document.getElementById('addGenErr').style.display = 'none';
+    document.getElementById('addGenStatus').textContent = '';
     document.getElementById('addUrlInput').value = '';
     document.getElementById('addPasteArea').value = '';
     document.getElementById('addParseErr').style.display = 'none';
     _navFillForm('', '', 'main', '', '', '', '', '', '');
     document.getElementById('addModal').style.display = 'flex';
-    setTimeout(function () { document.getElementById('addUrlInput').focus(); }, 80);
+    setTimeout(function () { document.getElementById('addGenPrompt').focus(); }, 80);
   };
 
   window.openEditRecipe = function (id) {
@@ -730,6 +754,117 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     _navApplyParsed(_navParseHeuristic(text));
   };
 
+  // ── Generate with AI ─────────────────────────────────────────────────────────
+
+  var _genMicActive = false;
+  var _genMicRecognition = null;
+
+  window._navToggleGenMic = function () {
+    if (_genMicActive) {
+      if (_genMicRecognition) _genMicRecognition.stop();
+      return;
+    }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      var e = document.getElementById('addGenErr');
+      e.textContent = 'Voice not supported in this browser.';
+      e.style.display = 'block';
+      return;
+    }
+    document.getElementById('addGenErr').style.display = 'none';
+    _genMicRecognition = new SR();
+    _genMicRecognition.continuous = true;
+    _genMicRecognition.interimResults = true;
+    _genMicRecognition.lang = navigator.language || 'en-US';
+
+    var btn = document.getElementById('addGenMicBtn');
+    var status = document.getElementById('addGenStatus');
+    _genMicActive = true;
+    btn.innerHTML = '\u23F9 Stop';
+    btn.style.background = '#c0392b'; btn.style.color = 'white'; btn.style.borderColor = '#c0392b';
+    status.textContent = '\u25CF Recording\u2026';
+
+    _genMicRecognition.onresult = function (ev) {
+      var t = '';
+      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+      document.getElementById('addGenPrompt').value = t;
+    };
+    _genMicRecognition.onerror = function (ev) {
+      _genMicActive = false;
+      btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      status.textContent = '';
+      if (ev.error !== 'no-speech') {
+        var e2 = document.getElementById('addGenErr');
+        e2.textContent = 'Mic: ' + ev.error; e2.style.display = 'block';
+      }
+    };
+    _genMicRecognition.onend = function () {
+      _genMicActive = false;
+      btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      status.textContent = '';
+    };
+    _genMicRecognition.start();
+  };
+
+  window._navGenerateWithAi = function () {
+    var desc = document.getElementById('addGenPrompt').value.trim();
+    var errEl = document.getElementById('addGenErr');
+    errEl.style.display = 'none';
+    if (!desc) {
+      errEl.textContent = 'Please describe the recipe you want.'; errEl.style.display = 'block'; return;
+    }
+    var key = localStorage.getItem('claudeApiKey');
+    if (!key) {
+      errEl.innerHTML = 'No API key \u2014 <button onclick="openApiSettings()" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:12px;font-family:sans-serif;text-decoration:underline;padding:0;">set it here</button>.';
+      errEl.style.display = 'block'; return;
+    }
+    var btn = document.getElementById('addGenBtn');
+    var status = document.getElementById('addGenStatus');
+    btn.textContent = 'Generating\u2026'; btn.disabled = true; status.textContent = '';
+
+    var prompt =
+      'Generate a complete recipe for: "' + desc + '"\n\n' +
+      'Return ONLY a valid JSON object with these exact fields:\n' +
+      '{\n  "title": "recipe name",\n  "description": "1-2 sentence description",\n' +
+      '  "servings": "e.g. 4 servings",\n  "prepTime": "e.g. 15 min",\n  "cookTime": "e.g. 30 min",\n' +
+      '  "ingredients": ["quantity + ingredient"],\n' +
+      '  "instructions": ["Full text of step 1", "Full text of step 2"],\n' +
+      '  "tags": ["2-5 tags: cuisine, dietary, etc."]\n}\n' +
+      'Return ONLY the JSON, no explanation.';
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+    .then(function (res) {
+      if (!res.ok) return res.json().then(function (e) { throw new Error(e.error && e.error.message || 'API error ' + res.status); });
+      return res.json();
+    })
+    .then(function (data) {
+      var raw = data.content && data.content[0] && data.content[0].text || '';
+      var jsonStr = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      _navApplyParsed(JSON.parse(jsonStr));
+      status.textContent = '\u2713 Done \u2014 review and save below';
+      setTimeout(function () { status.textContent = ''; }, 4000);
+    })
+    .catch(function (err) {
+      errEl.textContent = 'Generation failed: ' + err.message; errEl.style.display = 'block';
+    })
+    .finally(function () {
+      btn.textContent = '\u2728 Generate with AI'; btn.disabled = false;
+    });
+  };
+
   function _navParseHeuristic(text) {
     var lines = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
     var title = lines[0] || '';
@@ -767,6 +902,29 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
 
   // ── URL import ──────────────────────────────────────────────────────────────
 
+  // Try multiple CORS proxies in sequence; resolves with raw HTML string
+  function _navProxyFetch(url) {
+    // allorigins returns JSON wrapper { contents: "..." }
+    return fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url))
+      .then(function(r) {
+        if (!r.ok) throw new Error('allorigins ' + r.status);
+        return r.json().then(function(d) {
+          if (!d.contents) throw new Error('empty');
+          return d.contents;
+        });
+      })
+      .catch(function() {
+        // corsproxy.io returns raw HTML
+        return fetch('https://corsproxy.io/?' + encodeURIComponent(url))
+          .then(function(r) { if (!r.ok) throw new Error('corsproxy ' + r.status); return r.text(); });
+      })
+      .catch(function() {
+        // codetabs as last resort
+        return fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url))
+          .then(function(r) { if (!r.ok) throw new Error('codetabs ' + r.status); return r.text(); });
+      });
+  }
+
   window._navFetchUrl = function () {
     var raw = document.getElementById('addUrlInput').value.trim();
     if (!raw) { _navShowParseErr('Please enter a URL.'); return; }
@@ -776,14 +934,9 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     btn.textContent = 'Fetching\u2026'; btn.disabled = true;
     document.getElementById('addParseErr').style.display = 'none';
 
-    fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(raw))
-    .then(function (res) {
-      if (!res.ok) throw new Error('Proxy error ' + res.status);
-      return res.json();
-    })
-    .then(function (data) {
-      var html = data.contents || '';
-      if (!html) throw new Error('Empty page returned');
+    _navProxyFetch(raw)
+    .then(function (html) {
+      if (!html) throw new Error('Empty page');
 
       // 1. Try structured JSON-LD (schema.org/Recipe) — no AI needed
       var structured = _navParseJsonLd(html);
@@ -793,13 +946,13 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       }
 
       // 2. Fall back: strip HTML, put in paste area, trigger AI parse
-      var text = _navStripHtml(html).slice(0, 10000);
+      var text = _navStripHtml(html).slice(0, 12000);
       document.getElementById('addPasteArea').value = text;
       var key = localStorage.getItem('claudeApiKey');
       if (key) {
         _navRunAiParse();
       } else {
-        _navShowParseErr('No schema.org data found on this page. Paste your API key (\u2699) and click \u2728 Parse with AI, or edit the fields manually.');
+        _navShowParseErr('No schema.org data found. Set your API key (\u2699) and click \u2728 Parse with AI, or edit manually.');
       }
     })
     .catch(function (err) {
@@ -812,27 +965,46 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
 
   // Parse schema.org Recipe from JSON-LD blocks in raw HTML
   function _navParseJsonLd(html) {
-    var re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+    var re = /<script[^>]*type=["']?application\/ld\+json["']?[^>]*>([\s\S]*?)<\/script>/gi;
     var m;
     while ((m = re.exec(html)) !== null) {
       try {
-        var data = JSON.parse(m[1]);
-        // Handle @graph arrays
-        var items = data['@graph'] ? data['@graph'] : (Array.isArray(data) ? data : [data]);
-        for (var i = 0; i < items.length; i++) {
-          var r = _navExtractRecipe(items[i]);
-          if (r) return r;
-        }
+        // Unescape HTML entities that some sites inject into script blocks
+        var raw = m[1].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+        var data = JSON.parse(raw);
+        var r = _navFindRecipeNode(data);
+        if (r) return r;
       } catch (e) { /* malformed JSON — skip */ }
     }
+    return null;
+  }
+
+  // Recursively search a JSON-LD node/graph for a Recipe type
+  function _navFindRecipeNode(node) {
+    if (!node) return null;
+    if (Array.isArray(node)) {
+      for (var i = 0; i < node.length; i++) {
+        var r = _navFindRecipeNode(node[i]);
+        if (r) return r;
+      }
+      return null;
+    }
+    // Check current node
+    var result = _navExtractRecipe(node);
+    if (result) return result;
+    // Recurse into @graph
+    if (node['@graph']) return _navFindRecipeNode(node['@graph']);
     return null;
   }
 
   function _navExtractRecipe(d) {
     if (!d) return null;
     var type = d['@type'];
-    if (Array.isArray(type)) type = type[0];
-    if (type !== 'Recipe') return null;
+    // @type can be a string or an array; Recipe may not be first
+    var isRecipe = Array.isArray(type)
+      ? type.indexOf('Recipe') !== -1
+      : type === 'Recipe';
+    if (!isRecipe) return null;
 
     function txt(v) {
       if (!v) return '';
