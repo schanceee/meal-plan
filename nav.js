@@ -803,7 +803,20 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
       status.textContent = '';
     };
-    _genMicRecognition.start();
+    // Pre-request mic permission so Chrome doesn't throw a network error
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        _genMicRecognition.start();
+      })
+      .catch(function() {
+        _genMicActive = false;
+        btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+        status.textContent = '';
+        var e3 = document.getElementById('addGenErr');
+        e3.textContent = 'Mic permission denied. Allow microphone access and try again.';
+        e3.style.display = 'block';
+      });
   };
 
   window._navGenerateWithAi = function () {
@@ -1126,7 +1139,19 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
       status.textContent = '';
     };
-    _micRecognition.start();
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function(stream) {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        _micRecognition.start();
+      })
+      .catch(function() {
+        _micActive = false;
+        btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+        status.textContent = '';
+        var e2 = document.getElementById('feedbackMicErr');
+        e2.textContent = 'Mic permission denied. Allow microphone access and try again.';
+        e2.style.display = 'block';
+      });
   };
 
   window._navSubmitFeedback = function () {
