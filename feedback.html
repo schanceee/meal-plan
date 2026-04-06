@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback Review</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); }
+    .fb-toolbar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      background: var(--surface); position: sticky; top: 0; z-index: 10;
+    }
+    .fb-toolbar h1 { font-size: 15px; font-weight: 700; margin: 0; flex: 1; }
+    .fb-stats { font-size: 12px; color: var(--muted); }
+    .fb-list { max-width: 820px; margin: 24px auto; padding: 0 20px 80px; display: flex; flex-direction: column; gap: 12px; }
+    .fb-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .fb-card.status-implement { border-color: var(--teal); }
+    .fb-card.status-skip      { opacity: 0.45; }
+    .fb-card-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .fb-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .fb-page { font-size: 11px; color: var(--teal); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fb-status-pill {
+      font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+      text-transform: uppercase; letter-spacing: .05em; white-space: nowrap;
+    }
+    .pill-pending  { background: var(--amber-light); color: var(--amber); }
+    .pill-implement{ background: var(--teal-light);  color: var(--teal); }
+    .pill-skip     { background: var(--border);      color: var(--muted); }
+    .fb-message {
+      padding: 12px 14px; font-size: 14px; line-height: 1.6;
+      font-family: Georgia, serif; color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .fb-analysis {
+      padding: 12px 14px; background: var(--teal-light);
+      border-bottom: 1px solid var(--border); display: none;
+    }
+    .fb-analysis.visible { display: block; }
+    .fb-analysis-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--teal); margin-bottom: 4px;
+    }
+    .fb-analysis-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+    .fb-solution {
+      padding: 12px 14px; background: #f0f7f4;
+      border-bottom: 1px solid var(--border); display: none;
+    }
+    .fb-solution.visible { display: block; }
+    .fb-solution-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--green); margin-bottom: 4px;
+    }
+    .fb-solution-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+    .fb-actions {
+      display: flex; align-items: center; gap: 8px; padding: 10px 14px; flex-wrap: wrap;
+    }
+    .fb-btn {
+      font-size: 12px; font-family: 'Helvetica Neue', sans-serif;
+      font-weight: 600; padding: 5px 12px; border-radius: 6px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      cursor: pointer; color: var(--text);
+    }
+    .fb-btn:hover { border-color: var(--teal); color: var(--teal); }
+    .fb-btn-implement { border-color: var(--teal); color: var(--teal); }
+    .fb-btn-implement.active { background: var(--teal); color: white; }
+    .fb-btn-skip { border-color: var(--muted); color: var(--muted); }
+    .fb-btn-skip.active { background: var(--muted); color: white; }
+    .fb-btn-analyze { border-color: var(--amber); color: var(--amber); }
+    .fb-btn-analyze:hover { background: var(--amber-light); border-color: var(--amber); }
+    .fb-btn-analyze:disabled { opacity: 0.5; cursor: default; }
+    .fb-empty { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+    .fb-loading { text-align: center; padding: 40px; color: var(--muted); }
+    .fb-export-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--teal); color: white;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; font-size: 13px; font-weight: 600;
+      transform: translateY(100%); transition: transform 0.2s;
+      z-index: 100;
+    }
+    .fb-export-bar.visible { transform: translateY(0); }
+    .fb-export-btn {
+      background: white; color: var(--teal); border: none;
+      border-radius: 6px; padding: 6px 14px; font-size: 12px;
+      font-weight: 700; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="fb-toolbar">
+  <h1>Feedback Review</h1>
+  <span class="fb-stats" id="fbStats"></span>
+  <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;" onclick="_fbAnalyzeAll()">&#10024; Analyze all pending</button>
+  <button class="btn btn-teal" style="font-size:12px;padding:5px 12px;" onclick="_fbCopyForClaude()">&#128203; Copy &ldquo;Implement&rdquo; for Claude</button>
+  <a href="library.html" style="font-size:12px;color:var(--muted);text-decoration:none;">&larr; Back</a>
+</div>
+
+<div class="fb-list" id="fbList">
+  <div class="fb-loading">Loading feedback&hellip;</div>
+</div>
+
+<div class="fb-export-bar" id="fbExportBar">
+  <span id="fbExportLabel"></span>
+  <button class="fb-export-btn" onclick="_fbCopyForClaude()">Copy for Claude</button>
+</div>
+
+<script>
+var SUPABASE_URL  = 'https://uqdyllxyvstgeaeycsxx.supabase.co';
+var SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
+
+var _items = [];
+
+function _sbHeaders() {
+  return {
+    'apikey': SUPABASE_ANON,
+    'Authorization': 'Bearer ' + SUPABASE_ANON,
+    'Content-Type': 'application/json'
+  };
+}
+
+function _load() {
+  fetch(SUPABASE_URL + '/rest/v1/feedback?order=created_at.desc&limit=200', {
+    headers: _sbHeaders()
+  })
+  .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(function(rows) {
+    _items = rows || [];
+    _render();
+  })
+  .catch(function(err) {
+    document.getElementById('fbList').innerHTML =
+      '<div class="fb-empty">Could not load feedback: ' + err.message + '</div>';
+  });
+}
+
+function _render() {
+  var list = document.getElementById('fbList');
+  if (!_items.length) {
+    list.innerHTML = '<div class="fb-empty">No feedback yet.</div>';
+    _updateStats();
+    return;
+  }
+  list.innerHTML = _items.map(function(item, idx) {
+    var d = new Date(item.created_at);
+    var dateStr = d.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) +
+                  ' ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+    var page = (item.page_url || '').replace(/.*meal-plan\/?/, '') || 'home';
+    var status = item.status || 'pending';
+    var analysis = item.analysis || null;
+
+    var statusPill = '<span class="fb-status-pill pill-' + status + '">' + status + '</span>';
+
+    var analysisHtml = analysis
+      ? '<div class="fb-analysis visible">' +
+          '<div class="fb-analysis-label">Interpretation</div>' +
+          '<div class="fb-analysis-text">' + _esc(analysis.interpretation || '') + '</div>' +
+        '</div>' +
+        '<div class="fb-solution visible">' +
+          '<div class="fb-solution-label">Proposed solution</div>' +
+          '<div class="fb-solution-text">' + _esc(analysis.solution || '') + '</div>' +
+        '</div>'
+      : '<div class="fb-analysis" id="fbAnalysis_' + idx + '">' +
+          '<div class="fb-analysis-label">Interpretation</div>' +
+          '<div class="fb-analysis-text" id="fbAnalysisText_' + idx + '"></div>' +
+        '</div>' +
+        '<div class="fb-solution" id="fbSolution_' + idx + '">' +
+          '<div class="fb-solution-label">Proposed solution</div>' +
+          '<div class="fb-solution-text" id="fbSolutionText_' + idx + '"></div>' +
+        '</div>';
+
+    return '<div class="fb-card status-' + status + '" id="fbCard_' + idx + '">' +
+      '<div class="fb-card-header">' +
+        '<span class="fb-date">' + dateStr + '</span>' +
+        '<span class="fb-page">' + _esc(page) + '</span>' +
+        statusPill +
+      '</div>' +
+      '<div class="fb-message">' + _esc(item.message || '') + '</div>' +
+      analysisHtml +
+      '<div class="fb-actions">' +
+        (analysis ? '' : '<button class="fb-btn fb-btn-analyze" id="fbAnalyzeBtn_' + idx + '" onclick="_fbAnalyzeOne(' + idx + ')">&#10024; Analyze</button>') +
+        '<button class="fb-btn fb-btn-implement' + (status === 'implement' ? ' active' : '') + '" onclick="_fbSetStatus(' + idx + ',\'implement\')">&#10003; Implement</button>' +
+        '<button class="fb-btn fb-btn-skip' + (status === 'skip' ? ' active' : '') + '" onclick="_fbSetStatus(' + idx + ',\'skip\')">&times; Skip</button>' +
+        '<button class="fb-btn" onclick="_fbSetStatus(' + idx + ',\'pending\')">Reset</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  _updateStats();
+}
+
+function _esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+function _updateStats() {
+  var pending   = _items.filter(function(i){ return (i.status||'pending') === 'pending'; }).length;
+  var implement = _items.filter(function(i){ return i.status === 'implement'; }).length;
+  var skip      = _items.filter(function(i){ return i.status === 'skip'; }).length;
+  document.getElementById('fbStats').textContent =
+    _items.length + ' total \u00b7 ' + pending + ' pending \u00b7 ' + implement + ' to implement \u00b7 ' + skip + ' skipped';
+
+  var bar = document.getElementById('fbExportBar');
+  var label = document.getElementById('fbExportLabel');
+  if (implement > 0) {
+    label.textContent = implement + ' item' + (implement !== 1 ? 's' : '') + ' marked for implementation';
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+function _fbSetStatus(idx, status) {
+  var item = _items[idx];
+  if (!item) return;
+  item.status = status;
+  // Persist to Supabase
+  fetch(SUPABASE_URL + '/rest/v1/feedback?id=eq.' + item.id, {
+    method: 'PATCH',
+    headers: Object.assign(_sbHeaders(), { 'Prefer': 'return=minimal' }),
+    body: JSON.stringify({ status: status })
+  });
+  // Re-render just this card
+  var card = document.getElementById('fbCard_' + idx);
+  if (card) {
+    card.className = 'fb-card status-' + status;
+    // Update buttons
+    card.querySelectorAll('.fb-btn-implement').forEach(function(b){
+      b.classList.toggle('active', status === 'implement');
+    });
+    card.querySelectorAll('.fb-btn-skip').forEach(function(b){
+      b.classList.toggle('active', status === 'skip');
+    });
+    // Update pill
+    var pill = card.querySelector('.fb-status-pill');
+    if (pill) { pill.className = 'fb-status-pill pill-' + status; pill.textContent = status; }
+  }
+  _updateStats();
+}
+
+function _fbAnalyzeOne(idx) {
+  var item = _items[idx];
+  if (!item) return;
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) {
+    alert('Set your Claude API key in the recipe library first (⚙ button).');
+    return;
+  }
+  var btn = document.getElementById('fbAnalyzeBtn_' + idx);
+  if (btn) { btn.textContent = 'Analyzing\u2026'; btn.disabled = true; }
+
+  var prompt =
+    'A user submitted this feedback for a meal-planning web app (schanceee.github.io/meal-plan):\n\n' +
+    '"' + (item.message || '') + '"\n\n' +
+    'Page: ' + (item.page_url || 'unknown') + '\n\n' +
+    'Return ONLY a JSON object with two fields:\n' +
+    '{\n' +
+    '  "interpretation": "What the user actually means and how important/urgent this is (2-3 sentences)",\n' +
+    '  "solution": "Concrete proposed solution with enough detail for a developer to implement it (3-5 sentences)"\n' +
+    '}';
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var raw = data.content && data.content[0] && data.content[0].text || '{}';
+    var json = JSON.parse(raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim());
+    item.analysis = json;
+    // Save analysis to Supabase
+    fetch(SUPABASE_URL + '/rest/v1/feedback?id=eq.' + item.id, {
+      method: 'PATCH',
+      headers: Object.assign(_sbHeaders(), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({ analysis: json })
+    });
+    // Show in card
+    var aEl = document.getElementById('fbAnalysis_' + idx);
+    var sEl = document.getElementById('fbSolution_' + idx);
+    var atEl = document.getElementById('fbAnalysisText_' + idx);
+    var stEl = document.getElementById('fbSolutionText_' + idx);
+    if (atEl) atEl.innerHTML = _esc(json.interpretation || '');
+    if (stEl) stEl.innerHTML = _esc(json.solution || '');
+    if (aEl) aEl.classList.add('visible');
+    if (sEl) sEl.classList.add('visible');
+    if (btn) { btn.textContent = '\u2713 Done'; btn.disabled = true; }
+  })
+  .catch(function(err) {
+    if (btn) { btn.textContent = 'Retry'; btn.disabled = false; }
+    alert('Analysis failed: ' + err.message);
+  });
+}
+
+function _fbAnalyzeAll() {
+  var key = localStorage.getItem('claudeApiKey');
+  if (!key) { alert('Set your Claude API key in the recipe library first (⚙ button).'); return; }
+  _items.forEach(function(item, idx) {
+    if (!item.analysis) {
+      setTimeout(function() { _fbAnalyzeOne(idx); }, idx * 800);
+    }
+  });
+}
+
+function _fbCopyForClaude() {
+  var toImpl = _items.filter(function(i){ return i.status === 'implement'; });
+  if (!toImpl.length) { alert('No items marked as Implement yet.'); return; }
+  var text = '## Feedback to implement\n\n' +
+    toImpl.map(function(item, n) {
+      var d = new Date(item.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      var page = (item.page_url || '').replace(/.*meal-plan\/?/, '') || 'home';
+      var out = (n+1) + '. **' + d + ' \u00b7 ' + page + '**\n';
+      out += '   > ' + (item.message || '').replace(/\n/g, '\n   > ') + '\n';
+      if (item.analysis) {
+        out += '   - Interpretation: ' + (item.analysis.interpretation || '') + '\n';
+        out += '   - Proposed solution: ' + (item.analysis.solution || '') + '\n';
+      }
+      return out;
+    }).join('\n');
+
+  navigator.clipboard.writeText(text).then(function() {
+    var bar = document.getElementById('fbExportBar');
+    var label = document.getElementById('fbExportLabel');
+    var prev = label.textContent;
+    label.textContent = '\u2713 Copied to clipboard!';
+    setTimeout(function() { label.textContent = prev; }, 2000);
+  });
+}
+
+_load();
+</script>
+</body>
+</html>
