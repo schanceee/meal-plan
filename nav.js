@@ -758,65 +758,85 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
 
   var _genMicActive = false;
   var _genMicRecognition = null;
+  var _genMicRetries = 0;
+
+  function _genMicReset(btn, status) {
+    _genMicActive = false;
+    btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+    status.textContent = '';
+  }
+
+  function _genMicStart(btn, status) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    _genMicRecognition = new SR();
+    // continuous:false is far more reliable — avoids the persistent Google server connection
+    // that causes network errors; we auto-restart after each phrase instead
+    _genMicRecognition.continuous = false;
+    _genMicRecognition.interimResults = false;
+    _genMicRecognition.lang = 'en-US';
+    _genMicRecognition.maxAlternatives = 1;
+
+    _genMicRecognition.onresult = function (ev) {
+      var t = '';
+      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript + ' ';
+      var ta = document.getElementById('addGenPrompt');
+      ta.value = (ta.value + t).trim();
+      _genMicRetries = 0;
+    };
+    _genMicRecognition.onerror = function (ev) {
+      if (ev.error === 'no-speech') return; // harmless — just restart below
+      if (ev.error === 'network' && _genMicRetries < 2) {
+        // Retry once on transient network errors
+        _genMicRetries++;
+        return;
+      }
+      _genMicReset(btn, status);
+      var errEl = document.getElementById('addGenErr');
+      if (ev.error === 'not-allowed' || ev.error === 'permission-denied') {
+        errEl.textContent = 'Mic permission denied \u2014 allow microphone access in your browser settings.';
+      } else if (ev.error === 'network') {
+        errEl.textContent = 'Speech recognition is unavailable in your network. Type your description instead, or use your device\u2019s built-in dictation (Fn\u00d7Fn on Mac, mic key on iOS keyboard).';
+      } else {
+        errEl.textContent = 'Mic error: ' + ev.error;
+      }
+      errEl.style.display = 'block';
+    };
+    _genMicRecognition.onend = function () {
+      // Auto-restart while still active (simulates continuous mode without the network issues)
+      if (_genMicActive) {
+        try { _genMicRecognition.start(); } catch (e) { _genMicReset(btn, status); }
+      }
+    };
+    try {
+      _genMicRecognition.start();
+    } catch (e) {
+      _genMicReset(btn, status);
+    }
+  }
 
   window._navToggleGenMic = function () {
+    var btn = document.getElementById('addGenMicBtn');
+    var status = document.getElementById('addGenStatus');
     if (_genMicActive) {
-      if (_genMicRecognition) _genMicRecognition.stop();
+      _genMicActive = false;
+      if (_genMicRecognition) { try { _genMicRecognition.stop(); } catch(e) {} }
+      _genMicReset(btn, status);
       return;
     }
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      var e = document.getElementById('addGenErr');
-      e.textContent = 'Voice not supported in this browser.';
-      e.style.display = 'block';
+      var errEl = document.getElementById('addGenErr');
+      errEl.textContent = 'Voice input is not supported in this browser. Try Chrome or Safari.';
+      errEl.style.display = 'block';
       return;
     }
     document.getElementById('addGenErr').style.display = 'none';
-    _genMicRecognition = new SR();
-    _genMicRecognition.continuous = true;
-    _genMicRecognition.interimResults = true;
-    _genMicRecognition.lang = navigator.language || 'en-US';
-
-    var btn = document.getElementById('addGenMicBtn');
-    var status = document.getElementById('addGenStatus');
     _genMicActive = true;
+    _genMicRetries = 0;
     btn.innerHTML = '\u23F9 Stop';
     btn.style.background = '#c0392b'; btn.style.color = 'white'; btn.style.borderColor = '#c0392b';
     status.textContent = '\u25CF Recording\u2026';
-
-    _genMicRecognition.onresult = function (ev) {
-      var t = '';
-      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
-      document.getElementById('addGenPrompt').value = t;
-    };
-    _genMicRecognition.onerror = function (ev) {
-      _genMicActive = false;
-      btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
-      status.textContent = '';
-      if (ev.error !== 'no-speech') {
-        var e2 = document.getElementById('addGenErr');
-        e2.textContent = 'Mic: ' + ev.error; e2.style.display = 'block';
-      }
-    };
-    _genMicRecognition.onend = function () {
-      _genMicActive = false;
-      btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
-      status.textContent = '';
-    };
-    // Pre-request mic permission so Chrome doesn't throw a network error
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(function(stream) {
-        stream.getTracks().forEach(function(t) { t.stop(); });
-        _genMicRecognition.start();
-      })
-      .catch(function() {
-        _genMicActive = false;
-        btn.innerHTML = '\uD83C\uDF99 Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
-        status.textContent = '';
-        var e3 = document.getElementById('addGenErr');
-        e3.textContent = 'Mic permission denied. Allow microphone access and try again.';
-        e3.style.display = 'block';
-      });
+    _genMicStart(btn, status);
   };
 
   window._navGenerateWithAi = function () {
@@ -1093,65 +1113,63 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
 
   var _micActive = false;
   var _micRecognition = null;
+  var _micRetries = 0;
 
   window._navToggleMic = function () {
+    var btn = document.getElementById('feedbackMicBtn');
+    var status = document.getElementById('feedbackMicStatus');
     if (_micActive) {
-      if (_micRecognition) _micRecognition.stop();
+      _micActive = false;
+      if (_micRecognition) { try { _micRecognition.stop(); } catch(e) {} }
+      btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+      status.textContent = '';
       return;
     }
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      var e = document.getElementById('feedbackMicErr');
-      e.textContent = 'Voice not supported in this browser — please type your feedback.';
-      e.style.display = 'block';
+      var errEl = document.getElementById('feedbackMicErr');
+      errEl.textContent = 'Voice not supported in this browser — please type your feedback.';
+      errEl.style.display = 'block';
       return;
     }
     document.getElementById('feedbackMicErr').style.display = 'none';
-    _micRecognition = new SR();
-    _micRecognition.continuous = true;
-    _micRecognition.interimResults = true;
-    _micRecognition.lang = navigator.language || 'en-US';
-
-    var btn = document.getElementById('feedbackMicBtn');
-    var status = document.getElementById('feedbackMicStatus');
     _micActive = true;
+    _micRetries = 0;
     btn.innerHTML = '\u23F9\uFE0F Stop recording';
     btn.style.background = '#c0392b'; btn.style.color = 'white'; btn.style.borderColor = '#c0392b';
     status.textContent = '\u25CF Recording\u2026';
 
-    _micRecognition.onresult = function (ev) {
-      var t = '';
-      for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
-      document.getElementById('feedbackText').value = t;
-    };
-    _micRecognition.onerror = function (ev) {
-      _micActive = false;
-      btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
-      status.textContent = '';
-      if (ev.error !== 'no-speech') {
-        var e2 = document.getElementById('feedbackMicErr');
-        e2.textContent = 'Mic error: ' + ev.error + '. Check browser permissions.';
-        e2.style.display = 'block';
-      }
-    };
-    _micRecognition.onend = function () {
-      _micActive = false;
-      btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
-      status.textContent = '';
-    };
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(function(stream) {
-        stream.getTracks().forEach(function(t) { t.stop(); });
-        _micRecognition.start();
-      })
-      .catch(function() {
+    function startRec() {
+      _micRecognition = new SR();
+      _micRecognition.continuous = false;
+      _micRecognition.interimResults = false;
+      _micRecognition.lang = 'en-US';
+      _micRecognition.maxAlternatives = 1;
+      _micRecognition.onresult = function (ev) {
+        var t = '';
+        for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript + ' ';
+        var ta = document.getElementById('feedbackText');
+        ta.value = (ta.value + t).trim();
+        _micRetries = 0;
+      };
+      _micRecognition.onerror = function (ev) {
+        if (ev.error === 'no-speech') return;
+        if (ev.error === 'network' && _micRetries < 2) { _micRetries++; return; }
         _micActive = false;
         btn.innerHTML = '\uD83C\uDF99\uFE0F Voice'; btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
         status.textContent = '';
         var e2 = document.getElementById('feedbackMicErr');
-        e2.textContent = 'Mic permission denied. Allow microphone access and try again.';
+        e2.textContent = ev.error === 'network'
+          ? 'Speech recognition unavailable \u2014 type your feedback instead.'
+          : 'Mic: ' + ev.error;
         e2.style.display = 'block';
-      });
+      };
+      _micRecognition.onend = function () {
+        if (_micActive) { try { startRec(); } catch(e) { _micActive = false; } }
+      };
+      try { _micRecognition.start(); } catch(e) { _micActive = false; }
+    }
+    startRec();
   };
 
   window._navSubmitFeedback = function () {
