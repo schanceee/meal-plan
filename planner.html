@@ -390,7 +390,7 @@ function _renderSlot(day, meal, data) {
   var meta = get(data.recipeId || '') || {};
   var stars = meta.rating ? '\u2605'.repeat(meta.rating) : '';
   var rec = data.recipeId ? _recipeById(data.recipeId) : null;
-  var href = rec && rec.href ? rec.href : (rec ? 'library.html?q=' + encodeURIComponent(data.recipeName || '') : null);
+  var href = rec && rec.href ? rec.href : (rec ? 'library.html?id=' + encodeURIComponent(data.recipeId || '') : null);
 
   return '<div class="pg-slot pg-slot-filled' + (data.isNew ? ' pg-slot-new' : '') + '" ' +
     'onclick="_openPicker(\'' + day + '\',\'' + meal + '\')">' +
@@ -1003,6 +1003,26 @@ function _renderPlanDetails() {
   if (shoppingEl) shoppingEl.style.display = '';
   if (subEl) subEl.textContent = filled.length + ' meal' + (filled.length!==1?'s':'') + ' \xb7 ' + _fmtRange(_weekKey);
 
+  // Populate Bring widget with ingredients
+  var allIngredients = [];
+  filled.forEach(function(f) {
+    var rec = f.slot.recipeId ? _recipeById(f.slot.recipeId) : null;
+    var ings = (rec && rec.ingredients) || (f.slot.aiSuggestion && f.slot.aiSuggestion.ingredients) || [];
+    ings.forEach(function(i) { if (allIngredients.indexOf(i) === -1) allIngredients.push(i); });
+  });
+  var bringContainer = document.querySelector('.bring-buttons');
+  if (bringContainer) {
+    var oldDiv = bringContainer.querySelector('[data-bring-import]');
+    if (oldDiv) bringContainer.removeChild(oldDiv);
+    var newDiv = document.createElement('div');
+    newDiv.setAttribute('data-bring-import', allIngredients.join('|'));
+    newDiv.setAttribute('data-bring-language', 'en');
+    bringContainer.insertBefore(newDiv, bringContainer.firstChild);
+    if (window.BringImport && typeof window.BringImport.init === 'function') {
+      window.BringImport.init();
+    }
+  }
+
   var byDay = {};
   filled.forEach(function(f) {
     if (!byDay[f.day]) byDay[f.day] = { dayIdx:f.dayIdx, meals:[] };
@@ -1032,7 +1052,7 @@ function _renderPlanDetails() {
       '<div class="pd-day-meals">';
     byDay[d].meals.forEach(function(f) {
       var rec = f.slot.recipeId ? _recipeById(f.slot.recipeId) : null;
-      var href = rec && rec.href ? rec.href : (rec ? 'library.html?q=' + encodeURIComponent(f.slot.recipeName || '') : null);
+      var href = rec && rec.href ? rec.href : (rec ? 'library.html?id=' + encodeURIComponent(f.slot.recipeId || '') : null);
       html += '<div class="pd-meal">' +
         '<span class="pd-meal-type">' + MEAL_LBL[f.meal] + '</span>' +
         (href

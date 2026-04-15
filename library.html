@@ -779,6 +779,12 @@ function _ckFilterRecipes(q) {
   var params = new URLSearchParams(window.location.search);
   var q = params.get('q');
   if (q) { _libQ = q; document.getElementById('libSearch').value = q; }
+  var id = params.get('id');
+  if (id) {
+    renderLibrary();
+    openDetail(id);
+    return;
+  }
 })();
 renderLibrary();
 </script>
