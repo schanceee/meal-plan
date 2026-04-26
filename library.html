@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recipe Library</title>
+  <script src="auth-guard.js"></script>
   <link rel="stylesheet" href="style.css">
   <script src="recipes.js"></script>
   <script src="nav.js"></script>
@@ -127,6 +128,22 @@ var WEEKLY = [
   { id:'potage-carotte',     name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',               day:'Starter C',             tags:['vegetarian'],          color:'var(--teal)',  category:'starter' }
 ];
 
+// ── Built-in recipe photos (Unsplash) ───────────────────────────
+var WEEKLY_PHOTOS = {
+  'pasta-miso':         'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=400&h=200&q=75',
+  'bol-cereales':       'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&h=200&q=75',
+  'poulet-chou-savoie': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?auto=format&fit=crop&w=400&h=200&q=75',
+  'dal-lentilles':      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&h=200&q=75',
+  'perche-lac':         'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=400&h=200&q=75',
+  'salade-betteraves':  'https://images.unsplash.com/photo-1546549032-9571cd6b27df?auto=format&fit=crop&w=400&h=200&q=75',
+  'shakshuka':          'https://images.unsplash.com/photo-1590947132387-155cc02f3212?auto=format&fit=crop&w=400&h=200&q=75',
+  'tarte-poireaux':     'https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&w=400&h=200&q=75',
+  'veloute-choufleur':  'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=400&h=200&q=75',
+  'soupe-miso':         'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?auto=format&fit=crop&w=400&h=200&q=75',
+  'salade-mache':       'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=400&h=200&q=75',
+  'potage-carotte':     'https://images.unsplash.com/photo-1476718406966-408be26d75aa?auto=format&fit=crop&w=400&h=200&q=75'
+};
+
 // ── State ───────────────────────────────────────────────────────
 var _libQ = '';
 var _libFilter = 'all';
@@ -210,7 +227,8 @@ function renderLibrary() {
       note: rec.note || '',
       saved: !!rec.saved,
       color: r.color,
-      href: 'recettes/' + r.id + '.html'
+      href: 'recettes/' + r.id + '.html',
+      photoUrl: rec.photoUrl || WEEKLY_PHOTOS[r.id] || null
     });
   });
 
@@ -228,7 +246,8 @@ function renderLibrary() {
       category: r.category || 'main',
       servings: r.servings,
       prepTime: r.prepTime,
-      cookTime: r.cookTime
+      cookTime: r.cookTime,
+      photoUrl: r.photoUrl || null
     });
   });
 
@@ -294,8 +313,16 @@ function recipeCard(o) {
       '<button class="rc-save-btn' + (savedState ? ' saved' : '') + '" onclick="toggleLike(\'' + o.id + '\')">' + (savedState ? '\u2665' : '\u2661') + '</button>' +
     '</div>';
 
+  // Header: photo with colored fallback, or plain colored bar
+  var headerHtml = o.photoUrl
+    ? '<div class="rc-photo-wrap" style="background:' + o.color + ';">' +
+      '<img src="' + o.photoUrl + '" alt="" ' +
+      'onerror="this.parentNode.className=\'rc-header\';this.parentNode.style.height=\'6px\';this.parentNode.style.background=\'' + o.color + '\';this.remove()">' +
+      '</div>'
+    : '<div class="rc-header" style="background:' + o.color + '"></div>';
+
   var inner =
-    '<div class="rc-header" style="background:' + o.color + '"></div>' +
+    headerHtml +
     '<div class="rc-body">' +
       (o.sub ? '<div class="rc-day">' + o.sub + '</div>' : '') +
       '<div class="rc-name">' + o.name + '</div>' +
@@ -328,7 +355,13 @@ function openDetail(id) {
   var r = get(id);
   if (!r || !r.name) return;
 
-  var html = '<div style="font-size:18px;font-weight:normal;margin-bottom:8px;">' + r.name + '</div>';
+  var html = '';
+  if (r.photoUrl) {
+    html += '<img src="' + r.photoUrl + '" alt="" ' +
+      'style="width:100%;height:200px;object-fit:cover;border-radius:8px;margin-bottom:16px;display:block;" ' +
+      'onerror="this.style.display=\'none\'">';
+  }
+  html += '<div style="font-size:18px;font-weight:normal;margin-bottom:8px;">' + r.name + '</div>';
   if (r.description) html += '<p style="font-size:14px;color:var(--muted);margin-bottom:12px;">' + r.description + '</p>';
 
   var meta = [];

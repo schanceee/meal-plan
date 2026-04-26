@@ -20,6 +20,19 @@
 - [x] Back navigation on recipe pages (history.back() with fallback)
 - [x] Supabase auth (sign in / sign up / sign out)
 
+## Feature: Authentication — Login Page
+
+Implementation order: AUTH-01 → AUTH-02 → AUTH-03 → AUTH-04 → AUTH-05 → AUTH-06
+
+- **AUTH-01** (S) — Create `auth-guard.js` — FR-01, TR-02 — _no deps_
+- **AUTH-02** (S) — Add guard `<script>` to `index.html`, `library.html`, `planner.html` — FR-01, TR-07 — _needs AUTH-01_
+- **AUTH-03** (M) — Create `login.html`: layout, tabs, email/password sign-in + sign-up — FR-02, FR-03, FR-04, TR-01, TR-08 — _no deps_
+- **AUTH-04** (M) — Add Google + Apple OAuth to `login.html`, handle callback — FR-05, FR-06, FR-07, TR-04, TR-05 — _needs AUTH-03_
+- **AUTH-05** (S) — Remove auth modal from `nav.js` (`openAuthModal`, `authSignIn`, `authSignUp`, `#authModal` HTML) — TR-06 — _needs AUTH-03_
+- **AUTH-06** (S) — Simplify nav bar (always-authenticated), `authSignOut` redirects to `login.html` — TR-06, TR-03 — _needs AUTH-05_
+
+---
+
 ## In Progress 🔨
 
 - [ ] AI new-recipe save flow: fix "+ Library" to save directly (no modal), deduplicate on "Apply this plan"

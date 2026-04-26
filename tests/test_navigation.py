@@ -103,7 +103,12 @@ def test_library_id_param_opens_modal(page, http_server):
     # Seed on the same origin so localStorage persists across same-origin navigations
     page.goto(f"{http_server}/library.html")
     page.wait_for_selector("#libraryGrid", timeout=5000)
-    page.evaluate("localStorage.clear()")  # one-shot clear, not init_script
+    # Clear recipe data but keep session so auth-guard.js passes on the next navigation
+    page.evaluate("""
+        const session = localStorage.getItem('sbSession');
+        localStorage.clear();
+        if (session) localStorage.setItem('sbSession', session);
+    """)
     recipe_id = seed_custom_recipe(page, name="ID Param Test Recipe")
 
     # Navigate with the id param — localStorage persists (same origin)

@@ -48,62 +48,6 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     });
   }
 
-  window.openAuthModal = function (tab) {
-    var t = tab || 'signin';
-    ['signin', 'signup'].forEach(function (x) {
-      document.getElementById('authTab_' + x).classList.toggle('active', x === t);
-      document.getElementById('authForm_' + x).style.display = x === t ? 'block' : 'none';
-    });
-    document.getElementById('authErr').style.display = 'none';
-    document.getElementById('authModal').style.display = 'flex';
-    setTimeout(function () {
-      var el = document.getElementById(t === 'signin' ? 'authEmail' : 'authSignupEmail');
-      if (el) el.focus();
-    }, 80);
-  };
-
-  window.authSignIn = function () {
-    if (!_supaReady()) { _showAuthErr('Supabase not configured in nav.js yet.'); return; }
-    var email = document.getElementById('authEmail').value.trim();
-    var pass  = document.getElementById('authPassword').value;
-    if (!email || !pass) { _showAuthErr('Email and password required.'); return; }
-    var btn = document.getElementById('authSigninBtn');
-    btn.textContent = 'Signing in\u2026'; btn.disabled = true;
-    document.getElementById('authErr').style.display = 'none';
-    _sbPost('/auth/v1/token?grant_type=password', { email: email, password: pass })
-      .then(function (d) {
-        _saveSession(d); closeModal('authModal'); _updateAuthBar(); _pullFromSupabase();
-      })
-      .catch(function (e) { _showAuthErr(e.message); })
-      .finally(function () { btn.textContent = 'Sign in'; btn.disabled = false; });
-  };
-
-  window.authSignUp = function () {
-    if (!_supaReady()) { _showAuthErr('Supabase not configured in nav.js yet.'); return; }
-    var email = document.getElementById('authSignupEmail').value.trim();
-    var pass  = document.getElementById('authSignupPass').value;
-    var pass2 = document.getElementById('authSignupPass2').value;
-    if (!email || !pass) { _showAuthErr('Email and password required.'); return; }
-    if (pass !== pass2)  { _showAuthErr('Passwords do not match.'); return; }
-    if (pass.length < 8) { _showAuthErr('Password must be at least 8 characters.'); return; }
-    var btn = document.getElementById('authSignupBtn');
-    btn.textContent = 'Creating account\u2026'; btn.disabled = true;
-    document.getElementById('authErr').style.display = 'none';
-    _sbPost('/auth/v1/signup', { email: email, password: pass })
-      .then(function (d) {
-        if (d.access_token) {
-          _saveSession(d); closeModal('authModal'); _updateAuthBar(); _pushStarterRecipes();
-        } else {
-          var el = document.getElementById('authErr');
-          el.style.color = 'var(--green)';
-          el.textContent = '\u2713 Account created! Check your email to confirm, then sign in.';
-          el.style.display = 'block';
-        }
-      })
-      .catch(function (e) { _showAuthErr(e.message); })
-      .finally(function () { btn.textContent = 'Create account'; btn.disabled = false; });
-  };
-
   window.authSignOut = function () {
     if (_session && _supaReady()) {
       fetch(window.SUPABASE_URL + '/auth/v1/logout', {
@@ -111,28 +55,19 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
         headers: { 'apikey': window.SUPABASE_ANON, 'Authorization': 'Bearer ' + _session.access_token }
       }).catch(function () {});
     }
-    _saveSession(null); _updateAuthBar();
+    _saveSession(null);
+    location.replace((isRecipe ? '../' : '') + 'login.html');
   };
 
-  function _showAuthErr(msg) {
-    var el = document.getElementById('authErr');
-    el.style.color = '#c0392b'; el.textContent = msg; el.style.display = 'block';
-  }
-
   function _updateAuthBar() {
-    var sinEl = document.getElementById('gbSignIn');
-    var usEl  = document.getElementById('gbUser');
-    if (!sinEl || !usEl) return;
+    var usEl = document.getElementById('gbUser');
+    if (!usEl) return;
     var user = _session && _session.user;
-    if (user) {
-      var ini = (user.email || 'U').charAt(0).toUpperCase();
-      sinEl.style.display = 'none'; usEl.style.display = 'flex';
-      usEl.innerHTML =
-        '<span class="gb-avatar" title="' + (user.email || '') + '">' + ini + '</span>' +
-        '<button class="gb-signout-btn" onclick="authSignOut()">Sign out</button>';
-    } else {
-      sinEl.style.display = 'flex'; usEl.style.display = 'none'; usEl.innerHTML = '';
-    }
+    var ini = (user && user.email ? user.email : 'U').charAt(0).toUpperCase();
+    usEl.style.display = 'flex';
+    usEl.innerHTML =
+      '<span class="gb-avatar" title="' + (user && user.email ? user.email : '') + '">' + ini + '</span>' +
+      '<button class="gb-signout-btn" onclick="authSignOut()">Sign out</button>';
   }
 
   // ── Starter recipes ──────────────────────────────────────────────────────────
@@ -281,10 +216,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
         '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
         '<a class="gb-nav-link" href="' + root + 'planner.html">Planner</a>' +
         '<input id="gbSearch" class="gb-search" type="search" placeholder="Search library\u2026">' +
-        '<span id="gbSignIn" style="display:flex;align-items:center;">' +
-          '<button class="gb-signin-btn" onclick="openAuthModal()">Sign in</button>' +
-        '</span>' +
-        '<span id="gbUser" style="display:none;align-items:center;gap:8px;"></span>' +
+        '<span id="gbUser" style="display:flex;align-items:center;gap:8px;"></span>' +
         '<button class="gb-add" onclick="openAddRecipe()">+ Add recipe</button>' +
       '</div>';
     document.body.insertBefore(bar, document.body.firstChild);
@@ -332,39 +264,6 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     var d = document.createElement('div');
     var _inp = 'width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);box-sizing:border-box;';
     d.innerHTML =
-      // ── Auth modal ──
-      '<div id="authModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'authModal\')">' +
-        '<div class="modal-box" style="max-width:380px;">' +
-          '<div class="auth-tabs">' +
-            '<button id="authTab_signin" class="auth-tab active" onclick="openAuthModal(\'signin\')">Sign in</button>' +
-            '<button id="authTab_signup" class="auth-tab" onclick="openAuthModal(\'signup\')">Create account</button>' +
-          '</div>' +
-          // Sign-in form
-          '<div id="authForm_signin">' +
-            '<div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">' +
-              '<input id="authEmail" type="email" placeholder="Email" autocomplete="email" style="' + _inp + '">' +
-              '<input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" style="' + _inp + '">' +
-            '</div>' +
-            '<div class="modal-actions" style="margin-top:14px;">' +
-              '<button id="authSigninBtn" class="btn btn-teal" style="width:100%;" onclick="authSignIn()">Sign in</button>' +
-            '</div>' +
-            '<p style="text-align:center;margin-top:10px;font-size:12px;font-family:sans-serif;color:var(--muted);">No account yet? <button onclick="openAuthModal(\'signup\')" style="background:none;border:none;color:var(--teal);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;">Create one</button></p>' +
-          '</div>' +
-          // Sign-up form
-          '<div id="authForm_signup" style="display:none;">' +
-            '<div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">' +
-              '<input id="authSignupEmail" type="email" placeholder="Email" autocomplete="email" style="' + _inp + '">' +
-              '<input id="authSignupPass" type="password" placeholder="Password \u2014 min 8 characters" autocomplete="new-password" style="' + _inp + '">' +
-              '<input id="authSignupPass2" type="password" placeholder="Confirm password" autocomplete="new-password" style="' + _inp + '">' +
-              '<p style="font-size:12px;color:var(--muted);font-family:sans-serif;line-height:1.5;margin:0;">Your recipes sync across devices. Any recipes already saved on this device are migrated to your account automatically.</p>' +
-            '</div>' +
-            '<div class="modal-actions" style="margin-top:14px;">' +
-              '<button id="authSignupBtn" class="btn btn-teal" style="width:100%;" onclick="authSignUp()">Create account</button>' +
-            '</div>' +
-          '</div>' +
-          '<div id="authErr" style="display:none;font-size:13px;font-family:sans-serif;margin-top:8px;text-align:center;"></div>' +
-        '</div>' +
-      '</div>' +
       // ── Note modal ──
       '<div id="noteModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal(\'noteModal\')">' +
         '<div class="modal-box">' +
@@ -467,6 +366,26 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
             '<div>' +
               '<div class="modal-label" style="margin-bottom:4px;">Tags <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">\u2014 comma separated</span></div>' +
               '<input id="addTags" type="text" placeholder="vegetarian, italian, quick" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Georgia,serif;font-size:14px;color:var(--text);box-sizing:border-box;">' +
+            '</div>' +
+            '<div>' +
+              '<div class="modal-label" style="margin-bottom:6px;">Photo</div>' +
+              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+                '<input id="addPhotoUrl" type="url" placeholder="Paste an image URL\u2026" ' +
+                  'style="flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;padding:8px 10px;' +
+                  'font-family:Georgia,serif;font-size:13px;color:var(--text);box-sizing:border-box;" ' +
+                  'oninput="_navPhotoPreview(this.value)">' +
+                '<span style="color:var(--muted);font-size:12px;font-family:sans-serif;">or</span>' +
+                '<label style="cursor:pointer;">' +
+                  '<input id="addPhotoFile" type="file" accept="image/*" style="display:none" onchange="_navPhotoFromFile(this)">' +
+                  '<span class="btn btn-outline" style="font-size:12px;padding:7px 12px;" onclick="document.getElementById(\'addPhotoFile\').click()">Upload</span>' +
+                '</label>' +
+              '</div>' +
+              '<div id="addPhotoPreview" style="margin-top:8px;display:none;align-items:center;gap:8px;">' +
+                '<img id="addPhotoImg" src="" alt="" ' +
+                  'style="max-height:120px;max-width:100%;border-radius:6px;border:1px solid var(--border);object-fit:cover;">' +
+                '<button onclick="_navPhotoClear()" ' +
+                  'style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;font-family:sans-serif;padding:0;white-space:nowrap;">Remove</button>' +
+              '</div>' +
             '</div>' +
           '</div>' +
           '<div id="addModalError" style="display:none;color:#c0392b;font-size:13px;font-family:sans-serif;margin-top:8px;"></div>' +
@@ -578,6 +497,46 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     _refresh(_noteId);
   };
 
+  // ── Photo helpers ───────────────────────────────────────────────────────────
+
+  window._navPhotoPreview = function (url) {
+    var el = document.getElementById('addPhotoPreview');
+    var img = document.getElementById('addPhotoImg');
+    if (url) {
+      img.src = url;
+      el.style.display = 'flex';
+      delete el.dataset.b64;
+    } else {
+      el.style.display = 'none';
+      img.src = '';
+    }
+  };
+
+  window._navPhotoFromFile = function (input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    if (!file.type.startsWith('image/')) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      document.getElementById('addPhotoUrl').value = '';
+      var img = document.getElementById('addPhotoImg');
+      var el = document.getElementById('addPhotoPreview');
+      img.src = e.target.result;
+      el.style.display = 'flex';
+      el.dataset.b64 = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window._navPhotoClear = function () {
+    document.getElementById('addPhotoUrl').value = '';
+    document.getElementById('addPhotoFile').value = '';
+    var el = document.getElementById('addPhotoPreview');
+    el.style.display = 'none';
+    document.getElementById('addPhotoImg').src = '';
+    delete el.dataset.b64;
+  };
+
   // ── Add / edit recipe modal ─────────────────────────────────────────────────
 
   window._navSetCat = function (btn) {
@@ -594,7 +553,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     });
   }
 
-  function _navFillForm(title, desc, category, servings, prep, cook, ingredients, instructions, tags) {
+  function _navFillForm(title, desc, category, servings, prep, cook, ingredients, instructions, tags, photoUrl) {
     document.getElementById('addTitle').value = title;
     document.getElementById('addDesc').value = desc;
     _navSetCatValue(category);
@@ -605,6 +564,22 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     document.getElementById('addInstructions').value = instructions;
     document.getElementById('addTags').value = tags;
     document.getElementById('addModalError').style.display = 'none';
+    // Photo field
+    var photoUrlInput = document.getElementById('addPhotoUrl');
+    var photoPreviewEl = document.getElementById('addPhotoPreview');
+    var photoImgEl = document.getElementById('addPhotoImg');
+    if (photoUrl) {
+      photoUrlInput.value = photoUrl.startsWith('data:') ? '' : photoUrl;
+      photoImgEl.src = photoUrl;
+      photoPreviewEl.style.display = 'flex';
+      if (photoUrl.startsWith('data:')) photoPreviewEl.dataset.b64 = photoUrl;
+      else delete photoPreviewEl.dataset.b64;
+    } else {
+      photoUrlInput.value = '';
+      photoPreviewEl.style.display = 'none';
+      photoImgEl.src = '';
+      delete photoPreviewEl.dataset.b64;
+    }
   }
 
   window.openAddRecipe = function () {
@@ -616,7 +591,8 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     document.getElementById('addUrlInput').value = '';
     document.getElementById('addPasteArea').value = '';
     document.getElementById('addParseErr').style.display = 'none';
-    _navFillForm('', '', 'main', '', '', '', '', '', '');
+    _navFillForm('', '', 'main', '', '', '', '', '', '', '');
+    document.getElementById('addPhotoFile').value = '';
     document.getElementById('addModal').style.display = 'flex';
     setTimeout(function () { document.getElementById('addGenPrompt').focus(); }, 80);
   };
@@ -632,8 +608,10 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       r.servings || '', r.prepTime || '', r.cookTime || '',
       (r.ingredients || []).join('\n'),
       (r.instructions || []).join('\n'),
-      (r.tags || []).join(', ')
+      (r.tags || []).join(', '),
+      r.photoUrl || ''
     );
+    document.getElementById('addPhotoFile').value = '';
     document.getElementById('addModal').style.display = 'flex';
     setTimeout(function () { document.getElementById('addTitle').focus(); }, 80);
   };
@@ -650,6 +628,11 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     var ingredients = document.getElementById('addIngredients').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
     var instructions = document.getElementById('addInstructions').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
     var tags = document.getElementById('addTags').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    var photoPreviewEl = document.getElementById('addPhotoPreview');
+    var photoUrl = '';
+    if (photoPreviewEl && photoPreviewEl.style.display !== 'none') {
+      photoUrl = photoPreviewEl.dataset.b64 || document.getElementById('addPhotoUrl').value.trim();
+    }
     var data = {
       name: title,
       description: document.getElementById('addDesc').value.trim(),
@@ -659,7 +642,8 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       cookTime: document.getElementById('addCook').value.trim(),
       ingredients: ingredients,
       instructions: instructions,
-      tags: tags
+      tags: tags,
+      photoUrl: photoUrl || undefined
     };
 
     var savedId;
@@ -917,12 +901,17 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
   }
 
   function _navApplyParsed(p) {
+    // Preserve existing photo when parsing fills in other fields
+    var existingPhoto = document.getElementById('addPhotoPreview').dataset.b64
+      || document.getElementById('addPhotoUrl').value.trim()
+      || '';
     _navFillForm(
       p.title || '', p.description || '', p.category || 'main',
       p.servings || '', p.prepTime || '', p.cookTime || '',
       (p.ingredients || []).join('\n'),
       (p.instructions || []).join('\n'),
-      (p.tags || []).join(', ')
+      (p.tags || []).join(', '),
+      existingPhoto
     );
     setTimeout(function () { document.getElementById('addTitle').focus(); }, 80);
   }

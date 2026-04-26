@@ -1,6 +1,7 @@
 """
 Shared fixtures and helpers for meal-plan UI tests.
 """
+import json
 import subprocess
 import time
 import socket
@@ -8,6 +9,18 @@ import pytest
 
 PORT = 8889
 BASE = f"http://localhost:{PORT}"
+
+# ── Fake session pre-seeded into every guarded-page test ─────────
+# Stored via browser_context_args (storage_state) so it is in
+# localStorage BEFORE the first navigation — this is the reliable
+# way to bypass auth-guard.js in non-auth tests.
+# expires_at = 9999999999 (year 2286) so it never expires.
+FAKE_SESSION = json.dumps({
+    "access_token": "fake-test-access-token",
+    "refresh_token": "fake-test-refresh-token",
+    "expires_at": 9999999999,
+    "user": {"id": "test-uid-abc123", "email": "test@example.com"}
+})
 
 # ── Ripple ring CSS injected into every page ──────────────────────
 RIPPLE_CSS = """
@@ -76,6 +89,23 @@ def http_server():
 
 
 @pytest.fixture
+def browser_context_args(browser_context_args):
+    """Pre-seed localStorage with a valid auth session for all default-context tests.
+    This runs before any navigation so auth-guard.js always finds a valid session.
+    bare_page creates its own context without this, so it stays unauthenticated."""
+    return {
+        **browser_context_args,
+        "storage_state": {
+            "cookies": [],
+            "origins": [{
+                "origin": BASE,
+                "localStorage": [{"name": "sbSession", "value": FAKE_SESSION}]
+            }]
+        }
+    }
+
+
+@pytest.fixture
 def page(page, http_server):
     """Playwright page with ripple CSS pre-injected."""
     page.add_init_script(f"""
@@ -89,20 +119,46 @@ def page(page, http_server):
 
 
 @pytest.fixture
+def bare_page(browser, http_server):
+    """Fresh browser context with NO session — for testing auth guard behaviour.
+    Creates its own context (bypassing browser_context_args) so localStorage
+    starts empty. Use exclusively in test_auth.py for unauthenticated tests."""
+    context = browser.new_context()
+    p = context.new_page()
+    p.add_init_script(f"""
+        (() => {{
+            const style = document.createElement('style');
+            style.textContent = `{RIPPLE_CSS}`;
+            document.head.appendChild(style);
+        }})();
+    """)
+    yield p
+    context.close()
+
+
+@pytest.fixture
 def library(page, http_server):
-    """Navigate to library.html, clear localStorage once, wait for render."""
+    """Navigate to library.html, clear recipe data (keeping session), wait for render."""
     page.goto(f"{http_server}/library.html")
-    # Clear ONCE after first load — not in init_script so reloads preserve seeded data
-    page.evaluate("localStorage.clear()")
+    # Clear recipe data but preserve the session so auth-guard.js passes on reloads.
+    page.evaluate("""
+        const session = localStorage.getItem('sbSession');
+        localStorage.clear();
+        if (session) localStorage.setItem('sbSession', session);
+    """)
     page.wait_for_selector("#libraryGrid", timeout=5000)
     return page
 
 
 @pytest.fixture
 def planner(page, http_server):
-    """Navigate to planner.html, clear localStorage once, wait for grid."""
+    """Navigate to planner.html, clear recipe data (keeping session), wait for grid."""
     page.goto(f"{http_server}/planner.html")
-    page.evaluate("localStorage.clear()")
+    page.evaluate("""
+        const session = localStorage.getItem('sbSession');
+        localStorage.clear();
+        if (session) localStorage.setItem('sbSession', session);
+    """)
     page.wait_for_selector("#plannerGrid", timeout=5000)
     return page
 

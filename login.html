@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — Meal Plan</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      padding: 24px;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 400px;
+      padding: 36px 32px 32px;
+      box-shadow: 0 4px 24px rgba(44,36,22,0.08);
+    }
+
+    .login-wordmark {
+      font-family: Georgia, serif;
+      font-size: 22px;
+      color: var(--teal);
+      text-align: center;
+      margin-bottom: 28px;
+      letter-spacing: -0.3px;
+    }
+
+    .login-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+
+    .login-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 10px 0;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .login-tab.active {
+      color: var(--teal);
+      border-bottom-color: var(--teal);
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .login-input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-family: Georgia, serif;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: var(--teal);
+    }
+
+    .login-hint {
+      font-size: 11px;
+      font-family: 'Helvetica Neue', sans-serif;
+      color: var(--muted);
+      margin-top: -6px;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Helvetica Neue', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-top: 4px;
+    }
+
+    .login-btn:disabled { opacity: 0.6; cursor: default; }
+
+    .login-btn-primary {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .login-btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+    .login-err {
+      display: none;
+      font-size: 13px;
+      font-family: 'Helvetica Neue', sans-serif;
+      color: #c0392b;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .login-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0;
+      font-size: 11px;
+      font-family: 'Helvetica Neue', sans-serif;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .login-divider::before,
+    .login-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .login-btn-social {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .login-btn-social:hover:not(:disabled) {
+      background: var(--bg);
+    }
+
+    .social-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="login-wordmark">Meal Plan</div>
+
+    <!-- Tabs -->
+    <div class="login-tabs">
+      <button class="login-tab active" id="tabSignin" onclick="switchTab('signin')">Sign in</button>
+      <button class="login-tab" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
+    </div>
+
+    <!-- Shared error area — sits above whichever form is active -->
+    <div id="authErr" class="login-err"></div>
+
+    <!-- Sign-in form -->
+    <div id="formSignin" class="login-form">
+      <input id="authEmail" class="login-input" type="email"
+             placeholder="Email" autocomplete="email">
+      <input id="authPassword" class="login-input" type="password"
+             placeholder="Password" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doSignIn()">
+      <button id="authSigninBtn" class="login-btn login-btn-primary" onclick="doSignIn()">
+        Sign in
+      </button>
+    </div>
+
+    <!-- Sign-up form -->
+    <div id="formSignup" class="login-form" style="display:none">
+      <input id="authSignupEmail" class="login-input" type="email"
+             placeholder="Email" autocomplete="email">
+      <input id="authSignupPass" class="login-input" type="password"
+             placeholder="Password" autocomplete="new-password">
+      <div class="login-hint">At least 8 characters</div>
+      <input id="authSignupPass2" class="login-input" type="password"
+             placeholder="Confirm password" autocomplete="new-password"
+             onkeydown="if(event.key==='Enter')doSignUp()">
+      <button id="authSignupBtn" class="login-btn login-btn-primary" onclick="doSignUp()">
+        Create account
+      </button>
+    </div>
+
+    <!-- Social sign-in -->
+    <div class="login-divider">or</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button id="authGoogleBtn" class="login-btn login-btn-social" onclick="doOAuth('google')">
+        <!-- Google G icon -->
+        <svg class="social-icon" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+          <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+        </svg>
+        Continue with Google
+      </button>
+      <button id="authAppleBtn" class="login-btn login-btn-social" onclick="doOAuth('apple')">
+        <!-- Apple icon -->
+        <svg class="social-icon" viewBox="0 0 18 18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.52 0c.05.63-.17 1.27-.52 1.76-.37.51-.96.91-1.57.87-.07-.61.18-1.24.52-1.71C11.3.41 11.94.04 12.52 0zM15 12.44c-.29.65-.43.94-.81 1.52-.52.8-1.26 1.8-2.18 1.81-.81.01-1.02-.52-2.12-.51-1.1.01-1.33.53-2.14.52-.92-.01-1.62-.92-2.14-1.72C4.04 11.9 3.76 9.1 4.76 7.44c.71-1.19 1.84-1.88 2.9-1.88 1.08 0 1.76.52 2.65.52.87 0 1.4-.53 2.65-.53.94 0 1.95.51 2.66 1.39-2.34 1.28-1.96 4.62.38 5.5z"/>
+        </svg>
+        Continue with Apple
+      </button>
+    </div>
+  </div>
+
+  <script>
+    var SUPABASE_URL  = 'https://uqdyllxyvstgeaeycsxx.supabase.co';
+    var SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
+
+    // ── If already authenticated, skip login ─────────────────────────
+    (function () {
+      var s = null;
+      try { s = JSON.parse(localStorage.getItem('sbSession')); } catch (e) {}
+      if (s && s.access_token && s.expires_at > Math.floor(Date.now() / 1000)) {
+        var next = new URLSearchParams(location.search).get('next') || 'index.html';
+        location.replace(next);
+      }
+    })();
+
+    // ── OAuth callback — parse hash fragment set by Supabase ─────────
+    (function () {
+      var hash = location.hash;
+      if (!hash || hash.indexOf('access_token') === -1) return;
+      var params = {};
+      hash.slice(1).split('&').forEach(function (pair) {
+        var kv = pair.split('=');
+        params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+      });
+      if (!params.access_token) return;
+
+      var expiresIn = parseInt(params.expires_in, 10) || 3600;
+      var session = {
+        access_token:  params.access_token,
+        refresh_token: params.refresh_token || '',
+        expires_at:    Math.floor(Date.now() / 1000) + expiresIn,
+        user: { id: params.user_id || '', email: '' }
+      };
+      localStorage.setItem('sbSession', JSON.stringify(session));
+      history.replaceState(null, '', location.pathname + location.search);
+      var next = new URLSearchParams(location.search).get('next') || 'index.html';
+      location.replace(next);
+    })();
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    function showErr(msg) {
+      var el = document.getElementById('authErr');
+      el.style.color = '#c0392b';
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function hideErr() {
+      var el = document.getElementById('authErr');
+      el.style.display = 'none';
+      el.textContent = '';
+    }
+
+    function saveSession(data) {
+      var session = {
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token || '',
+        expires_at:    Math.floor(Date.now() / 1000) + (data.expires_in || 3600),
+        user:          data.user || {}
+      };
+      localStorage.setItem('sbSession', JSON.stringify(session));
+    }
+
+    function sbPost(path, body) {
+      return fetch(SUPABASE_URL + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        return r.json().then(function (d) {
+          if (!r.ok) throw new Error(d.error_description || d.msg || d.message || 'Auth error');
+          return d;
+        });
+      });
+    }
+
+    function getNext() {
+      return new URLSearchParams(location.search).get('next') || 'index.html';
+    }
+
+    // ── Tab toggle ───────────────────────────────────────────────────
+    function switchTab(tab) {
+      var isSignup = tab === 'signup';
+      document.getElementById('tabSignin').classList.toggle('active', !isSignup);
+      document.getElementById('tabSignup').classList.toggle('active', isSignup);
+      document.getElementById('formSignin').style.display = isSignup ? 'none' : 'flex';
+      document.getElementById('formSignup').style.display = isSignup ? 'flex' : 'none';
+      hideErr();
+      setTimeout(function () {
+        var el = document.getElementById(isSignup ? 'authSignupEmail' : 'authEmail');
+        if (el) el.focus();
+      }, 60);
+    }
+
+    // ── Email / password sign-in ─────────────────────────────────────
+    function doSignIn() {
+      hideErr();
+      var email = document.getElementById('authEmail').value.trim();
+      var pass  = document.getElementById('authPassword').value;
+      if (!email || !pass) { showErr('Email and password are required.'); return; }
+
+      var btn = document.getElementById('authSigninBtn');
+      btn.textContent = 'Signing in\u2026'; btn.disabled = true;
+
+      sbPost('/auth/v1/token?grant_type=password', { email: email, password: pass })
+        .then(function (d) {
+          saveSession(d);
+          location.replace(getNext());
+        })
+        .catch(function () {
+          showErr('Invalid email or password.');
+          btn.textContent = 'Sign in'; btn.disabled = false;
+        });
+    }
+
+    // ── Email / password sign-up ─────────────────────────────────────
+    function doSignUp() {
+      hideErr();
+      var email = document.getElementById('authSignupEmail').value.trim();
+      var pass  = document.getElementById('authSignupPass').value;
+      var pass2 = document.getElementById('authSignupPass2').value;
+      if (!email || !pass) { showErr('Email and password are required.'); return; }
+      if (pass.length < 8)  { showErr('Password must be at least 8 characters.'); return; }
+      if (pass !== pass2)   { showErr('Passwords do not match.'); return; }
+
+      var btn = document.getElementById('authSignupBtn');
+      btn.textContent = 'Creating account\u2026'; btn.disabled = true;
+
+      sbPost('/auth/v1/signup', { email: email, password: pass })
+        .then(function (d) {
+          if (d.access_token) {
+            saveSession(d);
+            location.replace(getNext());
+          } else {
+            var el = document.getElementById('authErr');
+            el.style.color = 'var(--green)';
+            el.textContent = '\u2713 Check your inbox to confirm your account, then sign in.';
+            el.style.display = 'block';
+            btn.textContent = 'Create account'; btn.disabled = false;
+          }
+        })
+        .catch(function (e) {
+          var msg = e.message || '';
+          if (msg.toLowerCase().indexOf('already') !== -1 || msg.toLowerCase().indexOf('registered') !== -1) {
+            showErr('An account with this email already exists.');
+          } else {
+            showErr(msg || 'Sign-up failed. Please try again.');
+          }
+          btn.textContent = 'Create account'; btn.disabled = false;
+        });
+    }
+
+    // ── OAuth (Google / Apple) ───────────────────────────────────────
+    function doOAuth(provider) {
+      var btn = document.getElementById(provider === 'google' ? 'authGoogleBtn' : 'authAppleBtn');
+      btn.disabled = true;
+      btn.textContent = 'Redirecting\u2026';
+
+      var redirectTo = location.origin + location.pathname.replace(/login\.html$/, '') + 'login.html';
+      var next = new URLSearchParams(location.search).get('next');
+      if (next) redirectTo += '?next=' + encodeURIComponent(next);
+
+      var url = SUPABASE_URL + '/auth/v1/authorize' +
+        '?provider=' + provider +
+        '&redirect_to=' + encodeURIComponent(redirectTo);
+
+      location.href = url;
+    }
+
+    // ── Autofocus on load ────────────────────────────────────────────
+    window.addEventListener('load', function () {
+      var el = document.getElementById('authEmail');
+      if (el) el.focus();
+    });
+  </script>
+</body>
+</html>
