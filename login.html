@@ -185,6 +185,29 @@
       <button id="authSigninBtn" class="login-btn login-btn-primary" onclick="doSignIn()">
         Sign in
       </button>
+      <div style="text-align:center;margin-top:-4px;">
+        <button onclick="doForgotPassword()" style="background:none;border:none;font-size:12px;font-family:'Helvetica Neue',sans-serif;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0;">
+          Forgot password?
+        </button>
+      </div>
+    </div>
+
+    <!-- Forgot password form -->
+    <div id="formReset" class="login-form" style="display:none">
+      <p style="font-size:13px;font-family:'Helvetica Neue',sans-serif;color:var(--muted);margin:0;line-height:1.5;">
+        Enter your email and we'll send a reset link.
+      </p>
+      <input id="authResetEmail" class="login-input" type="email"
+             placeholder="Email" autocomplete="email"
+             onkeydown="if(event.key==='Enter')doSendReset()">
+      <button id="authResetBtn" class="login-btn login-btn-primary" onclick="doSendReset()">
+        Send reset link
+      </button>
+      <div style="text-align:center;margin-top:-4px;">
+        <button onclick="switchTab('signin')" style="background:none;border:none;font-size:12px;font-family:'Helvetica Neue',sans-serif;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0;">
+          Back to sign in
+        </button>
+      </div>
     </div>
 
     <!-- Sign-up form -->
@@ -311,11 +334,44 @@
       document.getElementById('tabSignup').classList.toggle('active', isSignup);
       document.getElementById('formSignin').style.display = isSignup ? 'none' : 'flex';
       document.getElementById('formSignup').style.display = isSignup ? 'flex' : 'none';
+      document.getElementById('formReset').style.display = 'none';
       hideErr();
       setTimeout(function () {
         var el = document.getElementById(isSignup ? 'authSignupEmail' : 'authEmail');
         if (el) el.focus();
       }, 60);
+    }
+
+    // ── Forgot password ──────────────────────────────────────────────
+    function doForgotPassword() {
+      hideErr();
+      document.getElementById('formSignin').style.display = 'none';
+      document.getElementById('formReset').style.display = 'flex';
+      var email = document.getElementById('authEmail').value;
+      if (email) document.getElementById('authResetEmail').value = email;
+      setTimeout(function () { document.getElementById('authResetEmail').focus(); }, 60);
+    }
+
+    function doSendReset() {
+      hideErr();
+      var email = document.getElementById('authResetEmail').value.trim();
+      if (!email) { showErr('Please enter your email address.'); return; }
+
+      var btn = document.getElementById('authResetBtn');
+      btn.textContent = 'Sending\u2026'; btn.disabled = true;
+
+      sbPost('/auth/v1/recover', { email: email })
+        .then(function () {
+          var el = document.getElementById('authErr');
+          el.style.color = 'var(--green)';
+          el.textContent = '\u2713 Reset link sent — check your inbox.';
+          el.style.display = 'block';
+          btn.textContent = 'Send reset link'; btn.disabled = false;
+        })
+        .catch(function () {
+          showErr('Could not send reset email. Please try again.');
+          btn.textContent = 'Send reset link'; btn.disabled = false;
+        });
     }
 
     // ── Email / password sign-in ─────────────────────────────────────
