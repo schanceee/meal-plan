@@ -215,7 +215,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
       '<div class="gb-right">' +
         '<a class="gb-nav-link" href="' + root + 'library.html">Library</a>' +
         '<a class="gb-nav-link" href="' + root + 'planner.html">Planner</a>' +
-        '<input id="gbSearch" class="gb-search" type="search" placeholder="Search library\u2026">' +
+        '<input id="gbSearch" class="gb-search" type="search" placeholder="Search library\u2026" autocomplete="off">' +
         '<span id="gbUser" style="display:flex;align-items:center;gap:8px;"></span>' +
         '<button class="gb-add" onclick="openAddRecipe()">+ Add recipe</button>' +
       '</div>';
@@ -224,7 +224,7 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     var searchBar = document.createElement('div');
     searchBar.id = 'gbMobileSearch';
     searchBar.className = 'gb-mobile-search';
-    searchBar.innerHTML = '<input id="gbMobileSearchInput" class="gb-mobile-search-input" type="search" placeholder="Search library\u2026">';
+    searchBar.innerHTML = '<input id="gbMobileSearchInput" class="gb-mobile-search-input" type="search" placeholder="Search library\u2026" autocomplete="off">';
     document.body.insertBefore(searchBar, document.body.children[1]);
     document.body.style.paddingTop = '44px';
     renderBottomNav();

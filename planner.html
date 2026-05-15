@@ -63,7 +63,7 @@
   <div class="modal-box" style="max-width:540px;max-height:88vh;overflow-y:auto;">
     <div class="modal-label" id="pickerTitle">Choose a recipe</div>
     <input id="pickerSearch" type="search" placeholder="Search by name, ingredient, tag&hellip;"
-      oninput="renderPickerResults(this.value)"
+      autocomplete="off" oninput="renderPickerResults(this.value)"
       style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;
              font-family:Georgia,serif;font-size:14px;color:var(--text);margin-top:10px;box-sizing:border-box;">
     <div id="pickerResults" style="margin-top:10px;"></div>
