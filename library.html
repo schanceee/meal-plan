@@ -820,6 +820,17 @@ function _ckFilterRecipes(q) {
   }
 })();
 renderLibrary();
+
+// Clear search input after load — Chrome autofills after render and ignores autocomplete="off"
+window.addEventListener('load', function() {
+  var q = new URLSearchParams(window.location.search).get('q');
+  if (!q) {
+    setTimeout(function() {
+      var el = document.getElementById('libSearch');
+      if (el && el.value) { el.value = ''; _libQ = ''; renderLibrary(); }
+    }, 50);
+  }
+});
 </script>
 </body>
 </html>

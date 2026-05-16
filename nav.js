@@ -238,6 +238,16 @@ window.SUPABASE_ANON = 'sb_publishable_9Ak9MPrC8iYcBGeiqo0c3A_1Lr9m6EG';
     };
     document.getElementById('gbSearch').addEventListener('keydown', searchHandler);
     document.getElementById('gbMobileSearchInput').addEventListener('keydown', searchHandler);
+
+    // Clear nav search after load — Chrome ignores autocomplete="off" and fills with saved email
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        var s = document.getElementById('gbSearch');
+        if (s && s.value) s.value = '';
+        var m = document.getElementById('gbMobileSearchInput');
+        if (m && m.value) m.value = '';
+      }, 50);
+    });
   }
 
   function renderBottomNav() {
