@@ -173,24 +173,13 @@
     document.getElementById('recipeLayout').style.display = 'none';
   }
 
-  // JSON-LD schema + Bring! widget init
+  // Bring! widget init
+  // data-bring-import must be filled BEFORE the widget script loads so the
+  // widget encodes the items directly in its deep link (bypasses server-fetch,
+  // which would never see our JS-injected data).
   if (hasIngredients) {
-    // 1. Inject JSON-LD so the Bring! widget can read recipe ingredients
-    var schema = {
-      '@context': 'https://schema.org/',
-      '@type': 'Recipe',
-      'name': r.name,
-      'description': r.description || '',
-      'recipeYield': r.servings || '',
-      'recipeIngredient': r.ingredients
-    };
-    var ldScript = document.createElement('script');
-    ldScript.type = 'application/ld+json';
-    ldScript.textContent = JSON.stringify(schema);
-    document.head.appendChild(ldScript);
-
-    // 2. Inject the Bring! widget script NOW — after JSON-LD
-    //    are in the DOM — so it always initialises with the correct ingredients.
+    var bringDiv = document.querySelector('[data-bring-import]');
+    if (bringDiv) bringDiv.setAttribute('data-bring-import', r.ingredients.join('|'));
     var bringScript = document.createElement('script');
     bringScript.src = '//platform.getbring.com/widgets/import.js';
     bringScript.async = true;
