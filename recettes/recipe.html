@@ -189,11 +189,7 @@
     ldScript.textContent = JSON.stringify(schema);
     document.head.appendChild(ldScript);
 
-    // 2. Also set data-bring-import as pipe-separated list (belt-and-suspenders)
-    var bringDiv = document.querySelector('[data-bring-import]');
-    if (bringDiv) bringDiv.setAttribute('data-bring-import', r.ingredients.join('|'));
-
-    // 3. Inject the Bring! widget script NOW — after JSON-LD and data attribute
+    // 2. Inject the Bring! widget script NOW — after JSON-LD
     //    are in the DOM — so it always initialises with the correct ingredients.
     var bringScript = document.createElement('script');
     bringScript.src = '//platform.getbring.com/widgets/import.js';

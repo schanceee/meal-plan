@@ -1010,18 +1010,34 @@ function _renderPlanDetails() {
     var ings = (rec && rec.ingredients) || (f.slot.aiSuggestion && f.slot.aiSuggestion.ingredients) || [];
     ings.forEach(function(i) { if (allIngredients.indexOf(i) === -1) allIngredients.push(i); });
   });
+  // Inject/update a JSON-LD Recipe schema with all week's ingredients so the
+  // Bring! widget reads them — exactly the same approach as the static recipe pages.
+  var oldLd = document.getElementById('_plannerJsonLd');
+  if (oldLd) oldLd.remove();
+  var planSchema = {
+    '@context': 'https://schema.org/',
+    '@type': 'Recipe',
+    'name': 'Shopping list — ' + _fmtRange(_weekKey),
+    'recipeIngredient': allIngredients
+  };
+  var ldScript = document.createElement('script');
+  ldScript.id = '_plannerJsonLd';
+  ldScript.type = 'application/ld+json';
+  ldScript.textContent = JSON.stringify(planSchema);
+  document.head.appendChild(ldScript);
+
+  // Keep data-bring-import EMPTY (just like static recipe pages) — widget reads JSON-LD.
   var bringContainer = document.querySelector('.bring-buttons');
   if (bringContainer) {
     var bringDiv = bringContainer.querySelector('[data-bring-import]');
     if (!bringDiv) {
       bringDiv = document.createElement('div');
+      bringDiv.setAttribute('data-bring-import', '');
       bringDiv.setAttribute('data-bring-language', 'en');
       bringContainer.insertBefore(bringDiv, bringContainer.firstChild);
     }
-    bringDiv.setAttribute('data-bring-import', allIngredients.join('|'));
     bringDiv.innerHTML = ''; // Clear any previously-rendered widget button
-    // Remove any existing Bring! widget scripts and inject a fresh one so it
-    // re-scans the DOM and picks up the updated ingredient list.
+    // Inject a fresh Bring! script so it re-scans and picks up the new JSON-LD.
     document.querySelectorAll('script[src*="getbring.com"]').forEach(function(s) { s.remove(); });
     var bringScript = document.createElement('script');
     bringScript.src = '//platform.getbring.com/widgets/import.js';
