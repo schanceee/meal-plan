@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe</title>
+  <script src="../auth-guard.js"></script>
+  <link rel="stylesheet" href="../style.css">
+  <script src="../recipes.js"></script>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="../library.html" onclick="if(window.history.length>1){event.preventDefault();history.back()}">← Back</a>
+  <span class="sep">/</span>
+  <span id="navRecipeName" style="color:rgba(255,255,255,0.6)">Recipe</span>
+</nav>
+
+<div id="recipeHero" class="recipe-hero">
+  <div style="max-width:820px;margin:0 auto;">
+    <div id="recipeTags" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+    <h1 id="recipeTitle"></h1>
+    <div class="recipe-meta" id="recipeMeta"></div>
+  </div>
+</div>
+
+<div class="container-narrow">
+
+  <div id="recipePhoto" style="display:none;margin-bottom:28px;">
+    <img id="recipePhotoImg" src="" alt=""
+      style="width:100%;max-height:340px;object-fit:cover;border-radius:10px;">
+  </div>
+
+  <div id="recipeDescription" style="display:none;margin-bottom:24px;">
+    <p id="recipeDescText" style="font-size:15px;color:var(--muted);line-height:1.7;"></p>
+  </div>
+
+  <div class="recipe-layout" id="recipeLayout">
+
+    <div class="ingredients-box" id="ingredientsBox" style="display:none;">
+      <h2>Ingredients</h2>
+      <ul id="ingredientsList"></ul>
+    </div>
+
+    <div class="instructions-box" id="instructionsBox" style="display:none;">
+      <h2>Instructions</h2>
+      <ol id="instructionsList"></ol>
+    </div>
+
+  </div>
+
+  <div id="recipeNote" style="display:none;margin-top:28px;padding-top:20px;border-top:1px solid var(--border);">
+    <div class="modal-label" style="margin-bottom:8px;">Your notes</div>
+    <p id="recipeNoteText" style="font-size:14px;color:var(--muted);font-style:italic;line-height:1.6;"></p>
+  </div>
+
+  <div id="notFound" style="display:none;padding:60px 0;text-align:center;color:var(--muted);font-size:15px;">
+    Recipe not found. It may have been deleted.
+    <br><br>
+    <a href="../library.html" style="color:var(--teal);">← Back to library</a>
+  </div>
+
+</div>
+
+<script src="../nav.js"></script>
+<script>
+(function () {
+  var id = new URLSearchParams(location.search).get('id');
+  if (!id) { showNotFound(); return; }
+
+  var r = get(id);
+  if (!r || !r.name) { showNotFound(); return; }
+
+  // Page title
+  document.title = r.name + ' — Meal Plan';
+  document.getElementById('navRecipeName').textContent = r.name;
+
+  // Hero title
+  document.getElementById('recipeTitle').textContent = r.name;
+
+  // Tags
+  var tagsEl = document.getElementById('recipeTags');
+  (r.tags || []).forEach(function (t) {
+    var tl = t.toLowerCase();
+    var cls = tl === 'vegetarian' ? 'pill pill-v'
+            : (tl === 'fish' || tl === 'pescatarian') ? 'pill pill-p'
+            : (tl === 'meat' || tl === 'chicken') ? 'pill pill-m'
+            : 'pill pill-f';
+    var span = document.createElement('span');
+    span.className = cls;
+    span.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    tagsEl.appendChild(span);
+  });
+
+  // Meta (servings / prep / cook)
+  var metaEl = document.getElementById('recipeMeta');
+  [
+    { label: 'Servings', value: r.servings },
+    { label: 'Prep',     value: r.prepTime },
+    { label: 'Cook',     value: r.cookTime }
+  ].forEach(function (m) {
+    if (!m.value) return;
+    var div = document.createElement('div');
+    div.className = 'recipe-meta-item';
+    div.innerHTML = '<strong>' + m.label + '</strong>' + m.value;
+    metaEl.appendChild(div);
+  });
+
+  // Photo (above description, below hero)
+  if (r.photoUrl) {
+    var img = document.getElementById('recipePhotoImg');
+    img.src = r.photoUrl;
+    img.onerror = function () { document.getElementById('recipePhoto').style.display = 'none'; };
+    document.getElementById('recipePhoto').style.display = 'block';
+  }
+
+  // Description
+  if (r.description) {
+    document.getElementById('recipeDescText').textContent = r.description;
+    document.getElementById('recipeDescription').style.display = 'block';
+  }
+
+  // Ingredients
+  if (r.ingredients && r.ingredients.length) {
+    var ul = document.getElementById('ingredientsList');
+    r.ingredients.forEach(function (ing) {
+      var li = document.createElement('li');
+      li.textContent = ing;
+      ul.appendChild(li);
+    });
+    document.getElementById('ingredientsBox').style.display = '';
+  }
+
+  // Instructions
+  if (r.instructions && r.instructions.length) {
+    var ol = document.getElementById('instructionsList');
+    r.instructions.forEach(function (step) {
+      var li = document.createElement('li');
+      li.textContent = step;
+      ol.appendChild(li);
+    });
+    document.getElementById('instructionsBox').style.display = '';
+  }
+
+  // If no ingredients and no instructions, hide the layout grid
+  if ((!r.ingredients || !r.ingredients.length) && (!r.instructions || !r.instructions.length)) {
+    document.getElementById('recipeLayout').style.display = 'none';
+  }
+
+  // Note
+  if (r.note) {
+    document.getElementById('recipeNoteText').textContent = r.note;
+    document.getElementById('recipeNote').style.display = 'block';
+  }
+
+  function showNotFound() {
+    document.getElementById('recipeHero').style.display = 'none';
+    document.getElementById('notFound').style.display = 'block';
+  }
+})();
+</script>
+</body>
+</html>

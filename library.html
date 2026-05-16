@@ -242,7 +242,7 @@ function renderLibrary() {
       note: r.note || '',
       saved: !!r.saved,
       color: 'var(--teal)',
-      href: null,
+      href: 'recettes/recipe.html?id=' + encodeURIComponent(r.id),
       category: r.category || 'main',
       servings: r.servings,
       prepTime: r.prepTime,

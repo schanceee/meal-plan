@@ -91,8 +91,7 @@
   function slotHref(slot) {
     if (!slot || !slot.recipeId) return null;
     if (WEEKLY_HREF[slot.recipeId]) return WEEKLY_HREF[slot.recipeId];
-    // Any non-editorial recipe (custom, starter, etc.) → link to library by name
-    return 'library.html?q=' + encodeURIComponent(slot.recipeName || '');
+    return 'recettes/recipe.html?id=' + encodeURIComponent(slot.recipeId);
   }
 
   // ── Load plan ──────────────────────────────────────────
