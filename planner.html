@@ -1053,7 +1053,7 @@ function _renderPlanDetails() {
       '<div class="pd-day-meals">';
     byDay[d].meals.forEach(function(f) {
       var rec = f.slot.recipeId ? _recipeById(f.slot.recipeId) : null;
-      var href = rec && rec.href ? rec.href : (rec ? 'library.html?id=' + encodeURIComponent(f.slot.recipeId || '') : null);
+      var href = rec && rec.href ? rec.href : (rec ? 'recettes/recipe.html?id=' + encodeURIComponent(f.slot.recipeId || '') : null);
       html += '<div class="pd-meal">' +
         '<span class="pd-meal-type">' + MEAL_LBL[f.meal] + '</span>' +
         (href
