@@ -18,7 +18,6 @@
   </script>
   <title>Recipe — Meal Plan</title>
   <link rel="stylesheet" href="../style.css">
-  <script async src="//platform.getbring.com/widgets/import.js"></script>
   <script src="../recipes.js"></script>
 </head>
 <body>
@@ -174,8 +173,9 @@
     document.getElementById('recipeLayout').style.display = 'none';
   }
 
-  // JSON-LD schema for Bring! widget
+  // JSON-LD schema + Bring! widget init
   if (hasIngredients) {
+    // 1. Inject JSON-LD so the Bring! widget can read recipe ingredients
     var schema = {
       '@context': 'https://schema.org/',
       '@type': 'Recipe',
@@ -184,10 +184,21 @@
       'recipeYield': r.servings || '',
       'recipeIngredient': r.ingredients
     };
-    var s = document.createElement('script');
-    s.type = 'application/ld+json';
-    s.textContent = JSON.stringify(schema);
-    document.head.appendChild(s);
+    var ldScript = document.createElement('script');
+    ldScript.type = 'application/ld+json';
+    ldScript.textContent = JSON.stringify(schema);
+    document.head.appendChild(ldScript);
+
+    // 2. Also set data-bring-import as pipe-separated list (belt-and-suspenders)
+    var bringDiv = document.querySelector('[data-bring-import]');
+    if (bringDiv) bringDiv.setAttribute('data-bring-import', r.ingredients.join('|'));
+
+    // 3. Inject the Bring! widget script NOW — after JSON-LD and data attribute
+    //    are in the DOM — so it always initialises with the correct ingredients.
+    var bringScript = document.createElement('script');
+    bringScript.src = '//platform.getbring.com/widgets/import.js';
+    bringScript.async = true;
+    document.head.appendChild(bringScript);
   }
 
   // Copy ingredients helper

@@ -1019,6 +1019,7 @@ function _renderPlanDetails() {
       bringContainer.insertBefore(bringDiv, bringContainer.firstChild);
     }
     bringDiv.setAttribute('data-bring-import', allIngredients.join('|'));
+    bringDiv.innerHTML = ''; // Clear any previously-rendered widget button
     // Remove any existing Bring! widget scripts and inject a fresh one so it
     // re-scans the DOM and picks up the updated ingredient list.
     document.querySelectorAll('script[src*="getbring.com"]').forEach(function(s) { s.remove(); });
