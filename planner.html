@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="style.css">
   <script src="recipes.js"></script>
   <script src="nav.js"></script>
-  <script async src="//platform.getbring.com/widgets/import.js"></script>
 </head>
 <body>
 
@@ -1013,15 +1012,20 @@ function _renderPlanDetails() {
   });
   var bringContainer = document.querySelector('.bring-buttons');
   if (bringContainer) {
-    var oldDiv = bringContainer.querySelector('[data-bring-import]');
-    if (oldDiv) bringContainer.removeChild(oldDiv);
-    var newDiv = document.createElement('div');
-    newDiv.setAttribute('data-bring-import', allIngredients.join('|'));
-    newDiv.setAttribute('data-bring-language', 'en');
-    bringContainer.insertBefore(newDiv, bringContainer.firstChild);
-    if (window.BringImport && typeof window.BringImport.init === 'function') {
-      window.BringImport.init();
+    var bringDiv = bringContainer.querySelector('[data-bring-import]');
+    if (!bringDiv) {
+      bringDiv = document.createElement('div');
+      bringDiv.setAttribute('data-bring-language', 'en');
+      bringContainer.insertBefore(bringDiv, bringContainer.firstChild);
     }
+    bringDiv.setAttribute('data-bring-import', allIngredients.join('|'));
+    // Remove any existing Bring! widget scripts and inject a fresh one so it
+    // re-scans the DOM and picks up the updated ingredient list.
+    document.querySelectorAll('script[src*="getbring.com"]').forEach(function(s) { s.remove(); });
+    var bringScript = document.createElement('script');
+    bringScript.src = '//platform.getbring.com/widgets/import.js';
+    bringScript.async = true;
+    document.head.appendChild(bringScript);
   }
 
   var byDay = {};
