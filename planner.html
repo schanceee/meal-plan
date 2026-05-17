@@ -948,7 +948,7 @@ function _renderPlanDetails() {
   // Build Bring! deep link via Cloudflare Worker (serves JSON-LD for Bring!'s server parser)
   var plannerBringLink = document.getElementById('plannerBringLink');
   if (plannerBringLink && allIngredients.length) {
-    var BRING_WORKER = 'https://bring.edouardg.workers.dev';
+    var BRING_WORKER = 'https://bring.tbtg4bdb6t.workers.dev';
     var workerUrl = BRING_WORKER
       + '?name=' + encodeURIComponent('Shopping list \u2014 week of ' + _fmtRange(_weekKey))
       + '&i='   + encodeURIComponent(allIngredients.join('|'));
