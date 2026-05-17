@@ -47,7 +47,11 @@
           <div id="pdShoppingSub" style="font-size:12px;font-family:sans-serif;color:var(--muted);margin-top:4px;"></div>
         </div>
         <div class="bring-buttons">
-          <div data-bring-import="" data-bring-language="en"></div>
+          <a id="plannerBringLink" href="#" target="_blank" rel="noopener"
+             style="display:none;align-items:center;gap:8px;padding:7px 14px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:#222;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+            <img src="https://www.getbring.com/static/images/logo-short.svg" alt="Bring!" style="height:20px;width:auto;" onerror="this.style.display='none'">
+            Add to Bring!
+          </a>
           <button class="btn btn-outline btn-copy-shopping" style="font-size:13px;" onclick="_copyShoppingList()">&#128203; Copy list</button>
         </div>
       </div>
@@ -159,56 +163,7 @@
 
 <script>
 // ── Recipe database with ingredients + shelf-life ──────────
-var WEEKLY_DB = [
-  { id:'pasta-miso',
-    name:'Pasta \xb7 caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',
-    tags:['vegetarian','miso'], shelfLife:'any', href:'recettes/pasta-miso.html',
-    ingredients:['500g pasta (rigatoni or tagliatelle)','8 large yellow onions','2 tbsp white miso','150g Gruy\xe8re, grated','20 fresh sage leaves','4 tbsp olive oil','50g butter','Salt, black pepper'] },
-  { id:'bol-cereales',
-    name:'Grain bowl \xb7 roasted veg \xb7 lentils \xb7 tahini-tamari',
-    tags:['vegetarian','tamari'], shelfLife:'any', href:'recettes/bol-cereales.html',
-    ingredients:['200g farro or quinoa','200g green lentils','2 zucchini','1 bell pepper','2 carrots','3 tbsp tahini','2 tbsp tamari','1 lemon','Olive oil, salt, pepper'] },
-  { id:'poulet-chou-savoie',
-    name:'Braised chicken \xb7 Savoy cabbage \xb7 mustard',
-    tags:['meat','chicken'], shelfLife:'early', href:'recettes/poulet-chou-savoie.html',
-    ingredients:['1.2kg chicken thighs','1 Savoy cabbage','3 tbsp Dijon mustard','200ml cr\xe8me fra\xeeche','4 garlic cloves','Thyme sprigs','100ml white wine','Olive oil, salt'] },
-  { id:'dal-lentilles',
-    name:'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',
-    tags:['vegetarian','kefir'], shelfLife:'any', href:'recettes/dal-lentilles.html',
-    ingredients:['300g red lentils','300g basmati rice','2 tsp cumin seeds','1 tsp turmeric','1 tbsp fresh ginger','4 garlic cloves','200ml kefir','Fresh coriander','50g butter'] },
-  { id:'perche-lac',
-    name:'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',
-    tags:['fish'], shelfLife:'first2', href:'recettes/perche-lac.html',
-    ingredients:['600g lake perch fillets','Wild garlic or 3 garlic cloves','100g butter','200g baby spinach','600g potatoes','1 lemon','Olive oil, salt, pepper'] },
-  { id:'salade-betteraves',
-    name:'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese',
-    tags:['vegetarian'], shelfLife:'any', href:'recettes/salade-betteraves.html',
-    ingredients:['4 medium beets','150g Puy lentils','150g farro','150g goat cheese','3 tbsp balsamic vinegar','50g walnuts','Arugula','Olive oil, salt'] },
-  { id:'shakshuka',
-    name:'Spiced Shakshuka \xb7 roasted peppers \xb7 feta',
-    tags:['vegetarian'], shelfLife:'any', href:'recettes/shakshuka.html',
-    ingredients:['6 eggs','3 bell peppers','400g canned tomatoes','150g feta','2 tsp cumin','1 tsp smoked paprika','4 garlic cloves','Olive oil, coriander'] },
-  { id:'tarte-poireaux',
-    name:'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',
-    tags:['vegetarian'], shelfLife:'any', href:'recettes/tarte-poireaux.html',
-    ingredients:['1 sheet puff pastry','3 large leeks','150g Gruy\xe8re, grated','200g cr\xe8me fra\xeeche','2 eggs','30g butter','Thyme, nutmeg, salt'] },
-  { id:'veloute-choufleur',
-    name:'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast',
-    tags:['vegetarian','miso'], shelfLife:'any', href:'recettes/veloute-choufleur.html',
-    ingredients:['1 large cauliflower','2 tbsp white miso','50g hazelnuts','150g goat cheese','4 slices sourdough','200ml cr\xe8me fra\xeeche','2 garlic cloves','Olive oil'] },
-  { id:'soupe-miso',
-    name:'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',
-    tags:['vegetarian','miso'], shelfLife:'any', href:'recettes/soupe-miso.html',
-    ingredients:['4 tbsp white miso','2 leeks','15g dried wakame','300g silken tofu','1L dashi or water','Sesame oil, green onion'] },
-  { id:'salade-mache',
-    name:"Lamb's lettuce \xb7 radishes \xb7 cider-mustard dressing",
-    tags:['vegetarian'], shelfLife:'first3', href:'recettes/salade-mache.html',
-    ingredients:["150g lamb's lettuce",'1 bunch radishes','2 tbsp apple cider vinegar','1 tsp Dijon mustard','4 tbsp olive oil','Salt, pepper'] },
-  { id:'potage-carotte',
-    name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',
-    tags:['vegetarian'], shelfLife:'any', href:'recettes/potage-carotte.html',
-    ingredients:['800g carrots','40g fresh ginger','400ml coconut milk','1 onion','3 garlic cloves','Fresh coriander','Olive oil, salt'] }
-];
+// All recipe data now lives in localStorage (seeded by recipes.js).
 
 // ── Constants ──────────────────────────────────────────────
 var DAYS      = ['mon','tue','wed','thu','fri','sat','sun'];
@@ -282,50 +237,30 @@ function _pastPlans(n) {
 // ── Library helpers ────────────────────────────────────────
 function _recipeById(id) {
   if (!id) return null;
-  var w = WEEKLY_DB.filter(function(r){ return r.id === id; })[0];
-  if (w) return w;
   var c = get(id);
-  if (c && c.name) return Object.assign({ id:id, tags:[], ingredients:[], href:null, shelfLife:'any' }, c);
+  if (c && c.name) return Object.assign({ tags:[], ingredients:[], shelfLife:'any' }, c, { id: id });
   return null;
 }
 function _allRecipes() {
-  var list = WEEKLY_DB.map(function(r) {
-    var m = get(r.id) || {};
-    return Object.assign({}, r, { rating: m.rating||0, note: m.note||'' });
-  });
-  var custom = getAll();
-  Object.keys(custom).forEach(function(id) {
-    var r = custom[id];
-    // Only show properly-structured custom recipes (custom:true + saved:true)
-    if (r && r.custom && r.saved && r.name) {
-      list.push(Object.assign({ id:id, tags:[], ingredients:[], href:null, shelfLife:'any' }, r, { rating: r.rating||0 }));
-    }
-  });
-  return list;
+  var all = getAll();
+  return Object.keys(all).map(function(id) {
+    var r = all[id];
+    if (!r || !r.name || r.hidden) return null;
+    return Object.assign({ tags:[], ingredients:[], shelfLife:'any' }, r, { id: id, rating: r.rating||0 });
+  }).filter(Boolean);
 }
 
 // ── Ghost recipe cleanup ────────────────────────────────────
 function _cleanupGhostRecipes() {
   var changed = false;
-  // Ensure all custom-* entries in localStorage have custom:true and saved:true
-  var all = getAll();
-  Object.keys(all).forEach(function(id) {
-    var r = all[id];
-    if (r && id.indexOf('custom-') === 0 && r.name && (!r.custom || !r.saved)) {
-      set(id, { custom: true, saved: true });
-      changed = true;
-    }
-  });
   // Clear plan slots that point to non-existent or malformed recipes
   Object.keys(_plan.slots).forEach(function(k) {
     var s = _plan.slots[k];
     if (!s || !s.recipeId) return;
-    if (s.recipeId.indexOf('custom-') === 0) {
-      var rec = get(s.recipeId);
-      if (!rec || !rec.name) {
-        _plan.slots[k] = null;
-        changed = true;
-      }
+    var rec = get(s.recipeId);
+    if (!rec || !rec.name) {
+      _plan.slots[k] = null;
+      changed = true;
     }
   });
   if (changed) _savePlan();
@@ -1010,24 +945,17 @@ function _renderPlanDetails() {
     var ings = (rec && rec.ingredients) || (f.slot.aiSuggestion && f.slot.aiSuggestion.ingredients) || [];
     ings.forEach(function(i) { if (allIngredients.indexOf(i) === -1) allIngredients.push(i); });
   });
-  // Fill data-bring-import BEFORE injecting the widget script so the widget
-  // encodes items directly in its deep link (bypasses server-fetch, which
-  // would never see JS-injected data).
-  var bringContainer = document.querySelector('.bring-buttons');
-  if (bringContainer) {
-    var bringDiv = bringContainer.querySelector('[data-bring-import]');
-    if (!bringDiv) {
-      bringDiv = document.createElement('div');
-      bringDiv.setAttribute('data-bring-language', 'en');
-      bringContainer.insertBefore(bringDiv, bringContainer.firstChild);
-    }
-    bringDiv.setAttribute('data-bring-import', allIngredients.join('|'));
-    bringDiv.innerHTML = ''; // Clear any previously-rendered widget button
-    document.querySelectorAll('script[src*="getbring.com"]').forEach(function(s) { s.remove(); });
-    var bringScript = document.createElement('script');
-    bringScript.src = '//platform.getbring.com/widgets/import.js';
-    bringScript.async = true;
-    document.head.appendChild(bringScript);
+  // Build Bring! deep link via Cloudflare Worker (serves JSON-LD for Bring!'s server parser)
+  var plannerBringLink = document.getElementById('plannerBringLink');
+  if (plannerBringLink && allIngredients.length) {
+    var BRING_WORKER = 'https://bring.edouardg.workers.dev';
+    var workerUrl = BRING_WORKER
+      + '?name=' + encodeURIComponent('Shopping list \u2014 week of ' + _fmtRange(_weekKey))
+      + '&i='   + encodeURIComponent(allIngredients.join('|'));
+    var parserUrl   = 'https://api.getbring.com/rest/bringrecipes/parser?url=' + encodeURIComponent(workerUrl);
+    var deepLinkVal = 'https://deeplink.getbring.com/import?type=RECIPE&src=' + btoa(parserUrl);
+    plannerBringLink.href = 'https://enjoy.getbring.com/ZAzR?deep_link_value=' + encodeURIComponent(deepLinkVal);
+    plannerBringLink.style.display = 'inline-flex';
   }
 
   var byDay = {};

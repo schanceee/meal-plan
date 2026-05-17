@@ -64,21 +64,6 @@
   var DAYS      = ['mon','tue','wed','thu','fri','sat','sun'];
   var DAY_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   var DAY_JS    = ['sun','mon','tue','wed','thu','fri','sat'];
-  var WEEKLY_HREF = {
-    'pasta-miso':        'recettes/pasta-miso.html',
-    'bol-cereales':      'recettes/bol-cereales.html',
-    'poulet-chou-savoie':'recettes/poulet-chou-savoie.html',
-    'dal-lentilles':     'recettes/dal-lentilles.html',
-    'perche-lac':        'recettes/perche-lac.html',
-    'salade-betteraves': 'recettes/salade-betteraves.html',
-    'shakshuka':         'recettes/shakshuka.html',
-    'tarte-poireaux':    'recettes/tarte-poireaux.html',
-    'veloute-choufleur': 'recettes/veloute-choufleur.html',
-    'soupe-miso':        'recettes/soupe-miso.html',
-    'salade-mache':      'recettes/salade-mache.html',
-    'potage-carotte':    'recettes/potage-carotte.html'
-  };
-
   function getMondayKey(date) {
     var d = new Date(date);
     var day = d.getDay();
@@ -90,7 +75,6 @@
 
   function slotHref(slot) {
     if (!slot || !slot.recipeId) return null;
-    if (WEEKLY_HREF[slot.recipeId]) return WEEKLY_HREF[slot.recipeId];
     return 'recettes/recipe.html?id=' + encodeURIComponent(slot.recipeId);
   }
 

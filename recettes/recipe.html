@@ -55,7 +55,11 @@
       <p>Open on your iPhone and tap the Bring! button — or copy the list manually.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-      <div data-bring-import="" data-bring-language="fr"></div>
+      <a id="bringLink" href="#" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;color:#222;box-shadow:0 1px 3px rgba(0,0,0,.08);">
+        <img src="https://www.getbring.com/static/images/logo-short.svg" alt="Bring!" style="height:22px;width:auto;" onerror="this.style.display='none'">
+        Add to Bring!
+      </a>
       <button class="btn btn-outline" onclick="copyIngredients()">Copy ingredients</button>
       <span class="copy-success" id="copyMsg">✓ Copied!</span>
     </div>
@@ -173,17 +177,18 @@
     document.getElementById('recipeLayout').style.display = 'none';
   }
 
-  // Bring! widget init
-  // data-bring-import must be filled BEFORE the widget script loads so the
-  // widget encodes the items directly in its deep link (bypasses server-fetch,
-  // which would never see our JS-injected data).
+  // Bring! deep link — routes through a Cloudflare Worker that serves JSON-LD
+  // so Bring!'s server can read the ingredient list (it never sees JS-injected content).
+  // Worker URL: https://bring-proxy.YOURNAME.workers.dev  (deploy bring-worker/worker.js)
   if (hasIngredients) {
-    var bringDiv = document.querySelector('[data-bring-import]');
-    if (bringDiv) bringDiv.setAttribute('data-bring-import', r.ingredients.join('|'));
-    var bringScript = document.createElement('script');
-    bringScript.src = '//platform.getbring.com/widgets/import.js';
-    bringScript.async = true;
-    document.head.appendChild(bringScript);
+    var BRING_WORKER = 'https://bring.edouardg.workers.dev';
+    var workerUrl = BRING_WORKER
+      + '?name=' + encodeURIComponent(r.name)
+      + '&i='   + encodeURIComponent(r.ingredients.join('|'));
+    var parserUrl   = 'https://api.getbring.com/rest/bringrecipes/parser?url=' + encodeURIComponent(workerUrl);
+    var deepLinkVal = 'https://deeplink.getbring.com/import?type=RECIPE&src=' + btoa(parserUrl);
+    var bringHref   = 'https://enjoy.getbring.com/ZAzR?deep_link_value=' + encodeURIComponent(deepLinkVal);
+    document.getElementById('bringLink').href = bringHref;
   }
 
   // Copy ingredients helper

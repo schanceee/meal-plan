@@ -112,101 +112,58 @@
 </div>
 
 <script>
-// ── Weekly plan recipe metadata ─────────────────────────────────
-var WEEKLY = [
-  { id:'pasta-miso',         name:'Pasta caramelized onions \xb7 miso \xb7 Gruy\xe8re \xb7 sage',          day:'Monday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)', category:'main'    },
-  { id:'bol-cereales',       name:'Grain bowl \xb7 roasted veg \xb7 lentils \xb7 tahini-tamari',            day:'Tuesday \xb7 Dinner',   tags:['vegetarian','tamari'], color:'var(--green)', category:'main'    },
-  { id:'poulet-chou-savoie', name:'Braised chicken \xb7 Savoy cabbage \xb7 mustard',                        day:'Wednesday \xb7 Dinner', tags:['meat'],                color:'var(--red)',   category:'main'    },
-  { id:'dal-lentilles',      name:'Lentil Dal \xb7 cumin tadka \xb7 kefir \xb7 rice',                       day:'Thursday \xb7 Dinner',  tags:['vegetarian','kefir'],  color:'var(--green)', category:'main'    },
-  { id:'perche-lac',         name:'Lake perch \xb7 wild garlic butter \xb7 spinach \xb7 potatoes',          day:'Friday \xb7 Dinner',    tags:['fish'],                color:'var(--blue)',  category:'main'    },
-  { id:'salade-betteraves',  name:'Warm beet salad \xb7 lentils \xb7 farro \xb7 goat cheese',               day:'Saturday \xb7 Lunch',   tags:['vegetarian'],          color:'var(--green)', category:'main'    },
-  { id:'shakshuka',          name:'Spiced Shakshuka \xb7 roasted peppers \xb7 feta',                        day:'Saturday \xb7 Dinner',  tags:['vegetarian'],          color:'var(--green)', category:'main'    },
-  { id:'tarte-poireaux',     name:'Thin leek tart \xb7 Gruy\xe8re \xb7 cr\xe8me fra\xeeche',                day:'Sunday \xb7 Lunch',     tags:['vegetarian'],          color:'var(--green)', category:'main'    },
-  { id:'veloute-choufleur',  name:'Cauliflower velout\xe9 \xb7 miso \xb7 hazelnuts \xb7 goat cheese toast', day:'Sunday \xb7 Dinner',    tags:['vegetarian','miso'],   color:'var(--green)', category:'starter' },
-  { id:'soupe-miso',         name:'Miso soup \xb7 leek \xb7 wakame \xb7 silken tofu',                       day:'Starter A',             tags:['vegetarian','miso'],   color:'var(--teal)',  category:'starter' },
-  { id:'salade-mache',       name:"Lamb's lettuce salad \xb7 radishes \xb7 cider-mustard dressing",         day:'Starter B',             tags:['vegetarian'],          color:'var(--teal)',  category:'starter' },
-  { id:'potage-carotte',     name:'Carrot soup \xb7 ginger \xb7 coconut milk \xb7 coriander',               day:'Starter C',             tags:['vegetarian'],          color:'var(--teal)',  category:'starter' }
-];
-
-// ── Built-in recipe photos (Unsplash) ───────────────────────────
-var WEEKLY_PHOTOS = {
-  'pasta-miso':         'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=400&h=200&q=75',
-  'bol-cereales':       'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&h=200&q=75',
-  'poulet-chou-savoie': 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?auto=format&fit=crop&w=400&h=200&q=75',
-  'dal-lentilles':      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&h=200&q=75',
-  'perche-lac':         'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=400&h=200&q=75',
-  'salade-betteraves':  'https://images.unsplash.com/photo-1546549032-9571cd6b27df?auto=format&fit=crop&w=400&h=200&q=75',
-  'shakshuka':          'https://images.unsplash.com/photo-1590947132387-155cc02f3212?auto=format&fit=crop&w=400&h=200&q=75',
-  'tarte-poireaux':     'https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&w=400&h=200&q=75',
-  'veloute-choufleur':  'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=400&h=200&q=75',
-  'soupe-miso':         'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?auto=format&fit=crop&w=400&h=200&q=75',
-  'salade-mache':       'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=400&h=200&q=75',
-  'potage-carotte':     'https://images.unsplash.com/photo-1476718406966-408be26d75aa?auto=format&fit=crop&w=400&h=200&q=75'
-};
-
 // ── State ───────────────────────────────────────────────────────
 var _libQ = '';
 var _libFilter = 'all';
 var _libCatFilter = 'all';
 
+// Returns a Set of recipe IDs planned for the current week
+function _thisWeekIds() {
+  var d = new Date(), day = d.getDay();
+  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  d.setHours(0,0,0,0);
+  var mo = d.getMonth()+1, da = d.getDate();
+  var key = 'weekPlan_' + d.getFullYear() + '-' + (mo<10?'0':'') + mo + '-' + (da<10?'0':'') + da;
+  try {
+    var plan = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!plan || !plan.slots) return {};
+    var ids = {};
+    Object.values(plan.slots).forEach(function(s){ if (s && s.recipeId) ids[s.recipeId] = true; });
+    return ids;
+  } catch(e) { return {}; }
+}
+
 // ── Render ──────────────────────────────────────────────────────
 function renderLibrary() {
   var q = _libQ.toLowerCase().trim();
+  var weekIds = _libFilter === 'weekly' ? _thisWeekIds() : null;
 
-  // Only truly custom recipes (user-added), not WEEKLY_DB overrides
-  var allCustom = Object.entries(getAll())
-    .filter(function(e){ return e[1] && e[1].custom; })
-    .map(function(e){ return Object.assign({ id: e[0] }, e[1]); });
-
-  // WEEKLY_DB recipes to show
-  var weeklyShown = [];
-  if (_libFilter !== 'saved') {
-    weeklyShown = WEEKLY.filter(function(r) {
-      var rec = get(r.id);
-      if (rec.hidden) return false;
-      if (_libFilter === 'weekly') {
-        if (_libCatFilter !== 'all' && (rec.category || r.category) !== _libCatFilter) return false;
-        if (!q) return true;
-        return (rec.name || r.name).toLowerCase().includes(q) || (rec.tags || r.tags).some(function(t){ return t.includes(q); });
-      }
-      // 'all' filter
-      if (_libCatFilter !== 'all' && (rec.category || r.category) !== _libCatFilter) return false;
-      if (!q) return true;
-      return (rec.name || r.name).toLowerCase().includes(q) || (rec.category || r.category || '').includes(q) ||
-             (rec.tags || r.tags).some(function(t){ return t.includes(q); });
-    });
-  } else {
-    // 'saved' filter: only WEEKLY recipes the user liked
-    weeklyShown = WEEKLY.filter(function(r) {
-      var rec = get(r.id);
-      if (rec.hidden || !rec.saved) return false;
-      if (_libCatFilter !== 'all' && (rec.category || r.category) !== _libCatFilter) return false;
-      if (!q) return true;
-      return (rec.name || r.name).toLowerCase().includes(q) || (rec.tags || r.tags).some(function(t){ return t.includes(q); });
-    });
-  }
-
-  // Custom recipes to show
-  var customShown = [];
-  if (_libFilter !== 'weekly') {
-    var baseCustom = _libFilter === 'saved' ? allCustom.filter(function(r){ return r.saved; }) : allCustom;
-    customShown = baseCustom.filter(function(r) {
+  var all = Object.entries(getAll())
+    .map(function(e){ return Object.assign({ id: e[0] }, e[1]); })
+    .filter(function(r) {
+      if (!r.name) return false;
+      if (r.hidden) return false;
+      if (_libFilter === 'saved'  && !r.saved)               return false;
+      if (_libFilter === 'weekly' && !weekIds[r.id])         return false;
       if (_libCatFilter !== 'all' && (r.category || 'main') !== _libCatFilter) return false;
       if (!q) return true;
-      var n = (r.name||'').toLowerCase();
-      var d = (r.description||'').toLowerCase();
-      var tg = (r.tags||[]).some(function(t){ return t.toLowerCase().includes(q); });
-      var ig = (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(q); });
-      return n.includes(q) || d.includes(q) || tg || ig;
+      return (r.name||'').toLowerCase().includes(q) ||
+             (r.description||'').toLowerCase().includes(q) ||
+             (r.tags||[]).some(function(t){ return t.toLowerCase().includes(q); }) ||
+             (r.ingredients||[]).some(function(i){ return i.toLowerCase().includes(q); });
     });
-  }
 
-  var total = weeklyShown.length + customShown.length;
+  // Built-in first, then custom; within each group sort by name
+  all.sort(function(a, b) {
+    if (!!a.builtIn !== !!b.builtIn) return a.builtIn ? -1 : 1;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
   document.getElementById('libSubtitle').textContent =
-    total + ' recipe' + (total !== 1 ? 's' : '') +
+    all.length + ' recipe' + (all.length !== 1 ? 's' : '') +
     (q ? ' matching \u201c' + _libQ + '\u201d' : '');
 
-  if (!total) {
+  if (!all.length) {
     document.getElementById('libraryGrid').innerHTML =
       '<p style="color:var(--muted);font-size:14px;padding:32px 0;">' +
       (q ? 'No recipes match your search.' : 'No recipes yet. Import one or add manually.') + '</p>';
@@ -214,43 +171,24 @@ function renderLibrary() {
   }
 
   var html = '<div class="recipe-grid" style="margin-top:24px;">';
-
-  weeklyShown.forEach(function(r) {
-    var rec = get(r.id);
+  all.forEach(function(r) {
     html += recipeCard({
-      id: r.id,
-      name: rec.name || r.name,
-      sub: r.day,
-      tags: rec.tags || r.tags,
-      category: rec.category || r.category,
-      rating: rec.rating || 0,
-      note: rec.note || '',
-      saved: !!rec.saved,
-      color: r.color,
-      href: 'recettes/' + r.id + '.html',
-      photoUrl: rec.photoUrl || WEEKLY_PHOTOS[r.id] || null
-    });
-  });
-
-  customShown.forEach(function(r) {
-    html += recipeCard({
-      id: r.id,
-      name: r.name || 'Untitled',
-      sub: '',
-      tags: r.tags || [],
-      rating: r.rating || 0,
-      note: r.note || '',
-      saved: !!r.saved,
-      color: 'var(--teal)',
-      href: 'recettes/recipe.html?id=' + encodeURIComponent(r.id),
+      id:       r.id,
+      name:     r.name || 'Untitled',
+      tags:     r.tags || [],
       category: r.category || 'main',
+      rating:   r.rating || 0,
+      note:     r.note || '',
+      saved:    !!r.saved,
+      color:    r.color || 'var(--teal)',
+      href:     'recettes/recipe.html?id=' + encodeURIComponent(r.id),
       servings: r.servings,
       prepTime: r.prepTime,
       cookTime: r.cookTime,
-      photoUrl: r.photoUrl || null
+      photoUrl: r.photoUrl || null,
+      description: r.description || ''
     });
   });
-
   html += '</div>';
   document.getElementById('libraryGrid').innerHTML = html;
 }
@@ -436,11 +374,11 @@ function editNote(id) {
 }
 
 function deleteRecipeLib(id) {
-  var w = WEEKLY.find(function(w){ return w.id === id; });
-  var name = w ? (get(id).name || w.name) : (get(id).name || 'this recipe');
+  var rec = get(id);
+  var name = rec.name || 'this recipe';
   if (confirm('Delete "' + name.substring(0,70) + '"? This cannot be undone.')) {
-    if (w) {
-      // Built-in recipe: mark hidden in localStorage
+    if (rec.builtIn) {
+      // Built-in recipe: hide rather than remove so the planner still references it gracefully
       set(id, { hidden: true });
     } else {
       remove(id);
@@ -451,14 +389,6 @@ function deleteRecipeLib(id) {
 }
 
 function openEditForm(id) {
-  var w = WEEKLY.find(function(w){ return w.id === id; });
-  if (w) {
-    // Pre-populate localStorage with WEEKLY defaults if not yet overridden
-    var existing = get(id);
-    if (!existing.name) {
-      set(id, { name: w.name, category: w.category || 'main', tags: w.tags || [] });
-    }
-  }
   openEditRecipe(id);
 }
 
