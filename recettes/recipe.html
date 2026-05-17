@@ -55,10 +55,15 @@
       <p>Open on your iPhone and tap the Bring! button — or copy the list manually.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-      <a id="bringLink" href="#" target="_blank" rel="noopener"
-         style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:#fff;border:1.5px solid #e0e0e0;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;color:#222;box-shadow:0 1px 3px rgba(0,0,0,.08);">
-        <img src="https://www.getbring.com/static/images/logo-short.svg" alt="Bring!" style="height:22px;width:auto;" onerror="this.style.display='none'">
-        Add to Bring!
+      <a id="bringLink" href="#" target="_blank" rel="noopener" class="bring-btn">
+        <div class="bring-btn-inner">
+          <svg width="19" height="26" viewBox="0 0 19 26" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+            <path fill="#ffffff" d="M9.651,2.519 C9.641,2.492 9.630,2.472 9.619,2.459 C9.401,2.222 6.967,2.438 6.665,2.776 C6.482,2.980 6.440,4.073 6.436,4.907 C7.293,4.873 8.196,4.843 9.077,4.815 C9.124,4.148 9.207,3.394 9.345,3.079 C9.422,2.906 9.532,2.711 9.651,2.519 Z M10.278,1.618 C10.311,1.575 10.330,1.551 10.330,1.551 C10.330,1.551 12.070,1.022 12.519,1.129 C12.969,1.236 14.171,2.372 14.379,2.711 C14.514,2.930 14.520,3.967 14.508,4.673 C14.523,4.672 14.531,4.672 14.531,4.672 L14.919,25.272 C14.389,25.516 12.201,25.278 7.374,24.493 C2.868,23.761 1.332,23.373 1.039,23.124 C0.747,22.875 0.874,20.796 1.224,13.016 C1.528,6.246 1.464,5.547 1.865,5.237 C1.993,5.139 3.315,5.046 5.061,4.965 C5.055,4.185 5.071,3.172 5.188,3.039 C5.381,2.820 6.292,1.396 6.719,1.300 C7.147,1.204 8.850,0.650 9.291,0.720 C9.539,0.759 9.958,1.222 10.278,1.618 Z M10.814,2.816 L11.130,4.755 C11.788,4.737 12.391,4.722 12.901,4.710 C12.831,3.987 12.706,2.890 12.573,2.763 C12.430,2.626 11.387,2.740 10.814,2.816 Z"/>
+            <path fill="#ffffff" d="M15.235,25.670 C15.457,25.670 18.725,23.474 18.707,22.985 C18.688,22.496 18.864,18.985 18.707,14.908 C18.596,12.033 18.398,5.333 18.061,5.114 C17.726,4.895 14.325,4.763 14.325,4.763 L14.255,24.701 C14.255,24.701 15.014,25.670 15.235,25.670 Z"/>
+            <polyline fill="none" stroke="#ffffff" stroke-width="2" points="13.124 10.385 11.410 9 6.908 14.714 4.476 12.950 3 14.642 7.062 18.131"/>
+          </svg>
+          <span class="bring-btn-text">Ajouter à Bring!</span>
+        </div>
       </a>
       <button class="btn btn-outline" onclick="copyIngredients()">Copy ingredients</button>
       <span class="copy-success" id="copyMsg">✓ Copied!</span>
@@ -186,7 +191,7 @@
       + '?name=' + encodeURIComponent(r.name)
       + '&i='   + encodeURIComponent(r.ingredients.join('|'));
     var parserUrl   = 'https://api.getbring.com/rest/bringrecipes/parser?url=' + encodeURIComponent(workerUrl);
-    var deepLinkVal = 'https://deeplink.getbring.com/import?type=RECIPE&src=' + btoa(parserUrl);
+    var deepLinkVal = 'https://deeplink.getbring.com/import?type=RECIPE&src=' + btoa(unescape(encodeURIComponent(parserUrl)));
     var bringHref   = 'https://enjoy.getbring.com/ZAzR?deep_link_value=' + encodeURIComponent(deepLinkVal);
     document.getElementById('bringLink').href = bringHref;
   }
